@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOwner } from '@/lib/useOwner';
+import { useTheme } from '@/lib/theme';
 import { signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 
@@ -12,19 +13,18 @@ interface Props {
 export default function Sidebar({ onNewPost }: Props) {
   const pathname = usePathname();
   const { isOwner, user } = useOwner();
+  const { theme, toggle } = useTheme();
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[240px] xl:w-[260px] px-2 pt-1 pb-4 z-50 border-r border-zinc-800/60">
-      {/* Logo */}
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[240px] xl:w-[260px] px-2 pt-1 pb-4 z-50 border-r border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-black">
       <Link
         href="/"
-        className="flex items-center gap-3 px-3 py-4 rounded-2xl hover:bg-zinc-900/60 transition w-fit mb-1"
+        className="flex items-center gap-3 px-3 py-4 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-900/60 transition w-fit mb-1"
       >
         <span className="text-[28px] leading-none">🎭</span>
-        <span className="text-white font-extrabold text-xl tracking-tight">StageRecord</span>
+        <span className="text-zinc-900 dark:text-white font-extrabold text-xl tracking-tight">StageRecord</span>
       </Link>
 
-      {/* Nav items */}
       <nav className="flex flex-col gap-0.5">
         <SideNavItem
           href="/"
@@ -50,9 +50,28 @@ export default function Sidebar({ onNewPost }: Props) {
           }
           label="캘린더"
         />
+        <button
+          onClick={toggle}
+          className="flex items-center gap-4 px-3 py-3 rounded-2xl transition text-[17px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900/60 font-medium"
+        >
+          {theme === 'dark' ? (
+            <>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              라이트 모드
+            </>
+          ) : (
+            <>
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              다크 모드
+            </>
+          )}
+        </button>
       </nav>
 
-      {/* New post button */}
       {isOwner && (
         <button
           onClick={onNewPost}
@@ -62,29 +81,28 @@ export default function Sidebar({ onNewPost }: Props) {
         </button>
       )}
 
-      {/* Profile at bottom */}
       <div className="mt-auto">
         {user ? (
           <button
             onClick={() => signOut()}
-            className="flex items-center gap-3 w-full px-3 py-3 rounded-2xl hover:bg-zinc-900/60 transition text-left"
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-900/60 transition text-left"
           >
             {user.image ? (
               <Image src={user.image} alt="" width={40} height={40} className="rounded-full shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-zinc-700 shrink-0 flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 shrink-0 flex items-center justify-center text-zinc-700 dark:text-white font-bold">
                 {user.name?.[0]?.toUpperCase() ?? '?'}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-sm leading-tight truncate">{user.name}</p>
+              <p className="text-zinc-900 dark:text-white font-bold text-sm leading-tight truncate">{user.name}</p>
               <p className="text-zinc-500 text-xs mt-0.5 truncate">{isOwner ? '오너 계정' : '방문자'}</p>
             </div>
           </button>
         ) : (
           <button
             onClick={() => signIn('google')}
-            className="flex items-center gap-3 w-full px-3 py-3 rounded-2xl hover:bg-zinc-900/60 transition text-zinc-400 hover:text-white text-sm font-medium"
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-900/60 transition text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-sm font-medium"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Google로 로그인
@@ -104,7 +122,9 @@ function SideNavItem({
     <Link
       href={href}
       className={`flex items-center gap-4 px-3 py-3 rounded-2xl transition text-[17px]
-        ${active ? 'text-white font-bold' : 'text-zinc-400 hover:text-white hover:bg-zinc-900/60 font-medium'}`}
+        ${active
+          ? 'text-zinc-900 dark:text-white font-bold'
+          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900/60 font-medium'}`}
     >
       {icon}
       {label}

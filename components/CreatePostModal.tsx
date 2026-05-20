@@ -52,38 +52,38 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-lg bg-zinc-950 border border-zinc-800 rounded-t-3xl sm:rounded-2xl mx-0 sm:mx-4 max-h-[92dvh] overflow-y-auto shadow-2xl"
+        className="w-full sm:max-w-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-t-3xl sm:rounded-2xl mx-0 sm:mx-4 max-h-[92dvh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-9 h-1 bg-zinc-700 rounded-full" />
+          <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 dark:border-zinc-800">
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-start"
+            className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-start"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-          <h2 className="text-white font-bold text-[16px]">공연 기록 추가</h2>
+          <h2 className="text-zinc-900 dark:text-white font-bold text-[16px]">공연 기록 추가</h2>
           <div className="w-11" />
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
           {/* Title */}
           <div>
-            <label className="text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">극 제목 *</label>
+            <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">극 제목 *</label>
             <input
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-sky-500 text-[15px] transition"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-sky-500 dark:focus:border-sky-500 text-[15px] transition"
               placeholder="뮤지컬 제목을 입력하세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -95,28 +95,28 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
           {/* Date + Viewing count */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 날짜 *</label>
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 날짜 *</label>
               <input
                 type="date"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 text-[15px] transition"
+                className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-500 text-[15px] transition"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
               />
             </div>
             <div className="w-28">
-              <label className="text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 횟수</label>
-              <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden focus-within:border-sky-500 transition">
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 횟수</label>
+              <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden focus-within:border-sky-500 transition">
                 <button
                   type="button"
                   onClick={() => setViewingCount((v) => Math.max(1, v - 1))}
-                  className="w-10 h-[50px] flex items-center justify-center text-zinc-400 hover:text-white text-xl transition"
+                  className="w-10 h-[50px] flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
                 >−</button>
-                <span className="flex-1 text-center text-white font-medium text-[15px]">{viewingCount}</span>
+                <span className="flex-1 text-center text-zinc-900 dark:text-white font-medium text-[15px]">{viewingCount}</span>
                 <button
                   type="button"
                   onClick={() => setViewingCount((v) => v + 1)}
-                  className="w-10 h-[50px] flex items-center justify-center text-zinc-400 hover:text-white text-xl transition"
+                  className="w-10 h-[50px] flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
                 >+</button>
               </div>
             </div>
@@ -124,9 +124,9 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
 
           {/* Casting board */}
           <div>
-            <label className="text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">캐스팅보드</label>
+            <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">캐스팅보드</label>
             <div
-              className="w-full bg-zinc-900 border border-zinc-800 border-dashed rounded-xl cursor-pointer hover:border-sky-500 transition overflow-hidden"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 border-dashed rounded-xl cursor-pointer hover:border-sky-500 transition overflow-hidden"
               onClick={() => fileRef.current?.click()}
             >
               {imageUrl ? (
@@ -137,7 +137,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center gap-2 py-8 text-zinc-600">
+                <div className="flex flex-col items-center justify-center gap-2 py-8 text-zinc-400 dark:text-zinc-600">
                   <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                     <polyline points="21 15 16 10 5 21"/>

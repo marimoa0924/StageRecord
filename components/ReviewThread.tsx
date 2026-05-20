@@ -30,7 +30,7 @@ function ReviewImages({ images }: { images: string[] }) {
   if (images.length === 0) return null;
   if (images.length === 1) {
     return (
-      <div className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-800/60 aspect-video bg-zinc-950">
+      <div className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 aspect-video bg-zinc-50 dark:bg-zinc-950">
         <Image src={images[0]} alt="" fill className="object-cover" />
       </div>
     );
@@ -38,7 +38,7 @@ function ReviewImages({ images }: { images: string[] }) {
   return (
     <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
       {images.slice(0, 4).map((url, i) => (
-        <div key={i} className="relative aspect-square bg-zinc-950">
+        <div key={i} className="relative aspect-square bg-zinc-100 dark:bg-zinc-950">
           <Image src={url} alt="" fill className="object-cover" />
           {i === 3 && images.length > 4 && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
@@ -73,7 +73,7 @@ function ReviewLikeButton({
   return (
     <button
       onClick={toggle}
-      className={`flex items-center gap-1.5 text-[13px] transition min-h-[36px] ${liked ? 'text-pink-500' : 'text-zinc-600 hover:text-pink-400'}`}
+      className={`flex items-center gap-1.5 text-[13px] transition min-h-[36px] ${liked ? 'text-pink-500' : 'text-zinc-400 dark:text-zinc-600 hover:text-pink-400'}`}
     >
       {liked ? (
         <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="currentColor">
@@ -167,7 +167,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   return (
     <div className={isOwner ? 'pb-36' : 'pb-4'}>
       {reviews.length === 0 && !isOwner && (
-        <p className="text-zinc-700 text-center py-10 text-sm">아직 후기가 없습니다.</p>
+        <p className="text-zinc-400 dark:text-zinc-700 text-center py-10 text-sm">아직 후기가 없습니다.</p>
       )}
 
       {reviews.map((review, idx) => {
@@ -177,20 +177,20 @@ export default function ReviewThread({ postId, isOwner }: Props) {
 
         return (
           <article key={review.id} className="flex gap-3 px-4 pt-4">
-            {/* Thread line (no avatar) */}
-            <div className="flex flex-col items-center shrink-0 w-4">
-              <div className={`w-px bg-zinc-800 ${showLine ? 'flex-1 min-h-full' : 'h-3'}`} />
+            {/* w-10 matches the avatar column width so thread lines stay aligned */}
+            <div className="flex flex-col items-center shrink-0 w-10">
+              <div className={`w-0.5 bg-zinc-200 dark:bg-zinc-800 ${showLine ? 'flex-1 min-h-full' : 'h-3'}`} />
             </div>
 
-            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-800/60' : ''}`}>
+            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-200/80 dark:border-zinc-800/60' : ''}`}>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-white font-bold text-sm">주인장</span>
-                <span className="text-zinc-700 text-[13px]">·</span>
-                <span className="text-zinc-500 text-[13px]">{formatTime(review.created_at)}</span>
+                <span className="text-zinc-900 dark:text-white font-bold text-sm">주인장</span>
+                <span className="text-zinc-300 dark:text-zinc-700 text-[13px]">·</span>
+                <span className="text-zinc-400 dark:text-zinc-500 text-[13px]">{formatTime(review.created_at)}</span>
                 {isOwner && (
                   <button
                     onClick={() => handleDelete(review.id)}
-                    className="ml-auto text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
+                    className="ml-auto text-zinc-400 dark:text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
                   >
                     삭제
                   </button>
@@ -198,14 +198,13 @@ export default function ReviewThread({ postId, isOwner }: Props) {
               </div>
 
               {review.content && (
-                <p className="text-[#e7e9ea] text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
+                <p className="text-zinc-700 dark:text-[#e7e9ea] text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
                   {review.content}
                 </p>
               )}
 
               <ReviewImages images={images} />
 
-              {/* Like button */}
               <div className="mt-2">
                 <ReviewLikeButton
                   postId={postId}
@@ -219,19 +218,18 @@ export default function ReviewThread({ postId, isOwner }: Props) {
         );
       })}
 
-      {/* Compose bar — fixed above bottom nav */}
       {isOwner && (
         <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0">
-          <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-zinc-950 border-t border-zinc-800/60">
+          <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800/60">
             {pendingImages.length > 0 && (
               <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
                 {pendingImages.map((url, i) => (
-                  <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-700">
+                  <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
                     <Image src={url} alt="" fill className="object-cover" />
                     <button
                       type="button"
                       onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
-                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/80 rounded-full flex items-center justify-center text-white text-xs"
+                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-white text-xs"
                     >
                       ✕
                     </button>
@@ -253,13 +251,13 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 }}
                 placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
                 rows={1}
-                className="flex-1 bg-transparent outline-none text-white text-[15px] placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
+                className="flex-1 bg-transparent outline-none text-zinc-900 dark:text-white text-[15px] placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
               />
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="text-sky-400 hover:bg-sky-400/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
+                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
                 aria-label="사진 첨부"
               >
                 {uploading ? (

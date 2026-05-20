@@ -25,10 +25,15 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const fetchPosts = useCallback(async () => {
-    const res = await fetch('/api/posts');
-    const data = await res.json();
-    setPosts(data);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/posts');
+      const data = await res.json();
+      setPosts(Array.isArray(data) ? data : []);
+    } catch {
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await ready;
   const { id } = await params;
-  const db = getDb();
-  const reviews = db.prepare(`
-    SELECT * FROM reviews WHERE post_id = ? ORDER BY created_at ASC
-  `).all(id);
+  const reviews = await sql`
+    SELECT * FROM reviews WHERE post_id = ${id} ORDER BY created_at ASC
+  `;
   return NextResponse.json(reviews);
 }
 
@@ -15,22 +15,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const check = await requireOwner();
   if ('error' in check) return check.error;
 
+  await ready;
   const { id } = await params;
-  const body = await req.json();
-  const { content, images } = body;
+  const { content, images } = await req.json();
 
-  const imageList = Array.isArray(images) ? images : [];
+  const imageList: string[] = Array.isArray(images) ? images : [];
   if (!content?.trim() && imageList.length === 0) {
     return NextResponse.json({ error: '내용이나 이미지를 추가해주세요.' }, { status: 400 });
   }
 
   const imagesJson = JSON.stringify(imageList);
-  const db = getDb();
-  const result = db.prepare(`
-    INSERT INTO reviews (post_id, content, images) VALUES (?, ?, ?)
-  `).run(id, content.trim(), imagesJson);
+  const contentStr = content?.trim() ?? '';
 
-  const review = db.prepare('SELECT * FROM reviews WHERE id = ?').get(result.lastInsertRowid);
+  const [review] = await sql`
+    INSERT INTO reviews (post_id, content, images)
+    VALUES (${id}, ${contentStr}, ${imagesJson})
+    RETURNING *
+  `;
   return NextResponse.json(review, { status: 201 });
 }
 
@@ -38,9 +39,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const check = await requireOwner();
   if ('error' in check) return check.error;
 
+  await ready;
   const { id } = await params;
   const { reviewId } = await req.json();
-  const db = getDb();
-  db.prepare('DELETE FROM reviews WHERE id = ? AND post_id = ?').run(reviewId, id);
+  await sql`DELETE FROM reviews WHERE id = ${reviewId} AND post_id = ${id}`;
   return NextResponse.json({ ok: true });
 }

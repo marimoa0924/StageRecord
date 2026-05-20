@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { sql, ready } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -10,16 +10,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'year, month 파라미터가 필요합니다.' }, { status: 400 });
   }
 
-  const paddedMonth = month.padStart(2, '0');
-  const prefix = `${year}-${paddedMonth}`;
+  await ready;
+  const prefix = `${year}-${month.padStart(2, '0')}`;
 
-  const db = getDb();
-  const posts = db.prepare(`
+  const posts = await sql`
     SELECT id, title, performance_date, viewing_count, casting_board
     FROM posts
-    WHERE performance_date LIKE ?
+    WHERE performance_date LIKE ${prefix + '%'}
     ORDER BY performance_date ASC
-  `).all(`${prefix}%`);
-
+  `;
   return NextResponse.json(posts);
 }

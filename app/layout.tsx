@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
-import BottomNav from '@/components/BottomNav';
+import AppShell from '@/components/AppShell';
 import { SessionProvider } from 'next-auth/react';
 
 const notoSans = Noto_Sans_KR({ subsets: ['latin'], weight: ['400', '500', '700'] });
@@ -20,12 +20,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className={`${notoSans.className} bg-black text-white min-h-screen`}>
+      <body className={`${notoSans.className} bg-black text-[#e7e9ea]`}>
         <SessionProvider>
-          <div className="max-w-xl mx-auto border-x border-zinc-800 min-h-screen relative">
-            {children}
-          </div>
-          <BottomNav />
+          <AppShell>{children}</AppShell>
         </SessionProvider>
       </body>
     </html>

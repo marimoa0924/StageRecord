@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { sql, ready } from '@/lib/db';
 
 function getIp(req: NextRequest): string {
   return (
@@ -10,30 +10,43 @@ function getIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const ip = getIp(req);
-  const db = getDb();
+  try {
+    await ready;
+    const { id } = await params;
+    const ip = getIp(req);
 
-  const existing = db.prepare('SELECT id FROM likes WHERE post_id = ? AND ip_address = ?').get(id, ip);
+    const [existing] = await sql`
+      SELECT id FROM likes WHERE post_id = ${id} AND ip_address = ${ip}
+    `;
 
-  if (existing) {
-    db.prepare('DELETE FROM likes WHERE post_id = ? AND ip_address = ?').run(id, ip);
-    const count = (db.prepare('SELECT COUNT(*) as c FROM likes WHERE post_id = ?').get(id) as { c: number }).c;
-    return NextResponse.json({ liked: false, count });
-  } else {
-    db.prepare('INSERT INTO likes (post_id, ip_address) VALUES (?, ?)').run(id, ip);
-    const count = (db.prepare('SELECT COUNT(*) as c FROM likes WHERE post_id = ?').get(id) as { c: number }).c;
-    return NextResponse.json({ liked: true, count });
+    if (existing) {
+      await sql`DELETE FROM likes WHERE post_id = ${id} AND ip_address = ${ip}`;
+      const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM likes WHERE post_id = ${id}`;
+      return NextResponse.json({ liked: false, count: Number(count) });
+    } else {
+      await sql`INSERT INTO likes (post_id, ip_address) VALUES (${id}, ${ip})`;
+      const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM likes WHERE post_id = ${id}`;
+      return NextResponse.json({ liked: true, count: Number(count) });
+    }
+  } catch (e) {
+    console.error('[POST /api/posts/[id]/like]', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const ip = getIp(req);
-  const db = getDb();
+  try {
+    await ready;
+    const { id } = await params;
+    const ip = getIp(req);
 
-  const liked = !!db.prepare('SELECT id FROM likes WHERE post_id = ? AND ip_address = ?').get(id, ip);
-  const count = (db.prepare('SELECT COUNT(*) as c FROM likes WHERE post_id = ?').get(id) as { c: number }).c;
-
-  return NextResponse.json({ liked, count });
+    const [existing] = await sql`
+      SELECT id FROM likes WHERE post_id = ${id} AND ip_address = ${ip}
+    `;
+    const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM likes WHERE post_id = ${id}`;
+    return NextResponse.json({ liked: !!existing, count: Number(count) });
+  } catch (e) {
+    console.error('[GET /api/posts/[id]/like]', e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }

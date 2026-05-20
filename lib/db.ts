@@ -1,8 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 
-const DATABASE_URL = process.env.DATABASE_URL;
+// Vercel Neon integration sets DATABASE_URL; some setups use POSTGRES_URL
+const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
-// During `next build`, DATABASE_URL is not set — defer initialization to runtime
 export const sql = DATABASE_URL ? neon(DATABASE_URL) : (null as never);
 
 export const ready: Promise<void> = DATABASE_URL

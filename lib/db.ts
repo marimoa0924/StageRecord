@@ -34,6 +34,18 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(post_id, visitor_id)
         )
       `;
+      // Migrate old ip_address column to visitor_id if it still exists
+      await sql`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'likes' AND column_name = 'ip_address'
+          ) THEN
+            ALTER TABLE likes RENAME COLUMN ip_address TO visitor_id;
+          END IF;
+        END $$
+      `;
       await sql`
         CREATE TABLE IF NOT EXISTS review_likes (
           id         SERIAL PRIMARY KEY,

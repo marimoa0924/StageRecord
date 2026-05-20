@@ -6,11 +6,11 @@ interface Review {
   id: number;
   post_id: number;
   content: string;
-  images: string; // JSON string
+  images: string;
   created_at: string;
 }
 
-function formatCreatedAt(iso: string) {
+function formatTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
   const diff = (now.getTime() - d.getTime()) / 1000;
@@ -22,6 +22,31 @@ function formatCreatedAt(iso: string) {
 
 function parseImages(raw: string): string[] {
   try { return JSON.parse(raw) || []; } catch { return []; }
+}
+
+function ReviewImages({ images }: { images: string[] }) {
+  if (images.length === 0) return null;
+  if (images.length === 1) {
+    return (
+      <div className="mt-2 relative w-full rounded-2xl overflow-hidden border border-zinc-800 aspect-video bg-zinc-900">
+        <Image src={images[0]} alt="" fill className="object-cover" />
+      </div>
+    );
+  }
+  return (
+    <div className={`mt-2 grid gap-0.5 rounded-2xl overflow-hidden ${images.length <= 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+      {images.slice(0, 4).map((url, i) => (
+        <div key={i} className="relative aspect-square bg-zinc-900">
+          <Image src={url} alt="" fill className="object-cover" />
+          {i === 3 && images.length > 4 && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
+              +{images.length - 4}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 interface Props {
@@ -96,131 +121,121 @@ export default function ReviewThread({ postId, isOwner }: Props) {
     fetchReviews();
   }
 
-  return (
-    <div className="flex flex-col">
-      {/* Reviews list */}
-      <div className={isOwner ? 'pb-40' : 'pb-4'}>
-        {reviews.length === 0 && (
-          <p className="text-zinc-600 text-center py-10">
-            {isOwner ? '첫 번째 후기를 남겨보세요!' : '아직 후기가 없습니다.'}
-          </p>
-        )}
-        {reviews.map((review, idx) => {
-          const images = parseImages(review.images);
-          return (
-            <article key={review.id} className="flex gap-3 px-4 py-4 border-b border-zinc-800">
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-white font-bold shrink-0 text-sm">
-                  {idx + 1}
-                </div>
-                {idx < reviews.length - 1 && (
-                  <div className="w-0.5 flex-1 bg-zinc-700 mt-1 min-h-[20px]" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-bold text-sm">후기 #{idx + 1}</span>
-                  <span className="text-zinc-500 text-xs">{formatCreatedAt(review.created_at)}</span>
-                  {isOwner && (
-                    <button
-                      onClick={() => handleDelete(review.id)}
-                      className="ml-auto text-zinc-600 hover:text-red-500 text-xs transition min-h-[44px] flex items-center px-1"
-                    >
-                      삭제
-                    </button>
-                  )}
-                </div>
-                {review.content && (
-                  <p className="text-white mt-1 whitespace-pre-wrap leading-relaxed text-[15px]">
-                    {review.content}
-                  </p>
-                )}
-                {images.length > 0 && (
-                  <div className={`mt-2 grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                    {images.map((url, i) => (
-                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-zinc-800">
-                        <Image src={url} alt={`후기 이미지 ${i + 1}`} fill className="object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+  const hasContent = content.trim().length > 0 || pendingImages.length > 0;
 
-      {/* Fixed bottom input (owner only) */}
+  return (
+    <div className={isOwner ? 'pb-36' : 'pb-4'}>
+      {reviews.length === 0 && !isOwner && (
+        <p className="text-zinc-600 text-center py-10 text-sm">아직 후기가 없습니다.</p>
+      )}
+
+      {reviews.map((review, idx) => {
+        const images = parseImages(review.images);
+        const isLast = idx === reviews.length - 1;
+        const showLine = !isLast || isOwner;
+
+        return (
+          <article key={review.id} className="flex gap-3 px-4 pt-4">
+            <div className="flex flex-col items-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-white shrink-0">
+                🎭
+              </div>
+              {showLine && (
+                <div className="w-0.5 flex-1 bg-zinc-800 mt-1 min-h-[16px]" />
+              )}
+            </div>
+
+            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-800' : ''}`}>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-white font-bold text-sm">StageRecord</span>
+                <span className="text-zinc-700 text-[13px]">·</span>
+                <span className="text-zinc-500 text-[13px]">{formatTime(review.created_at)}</span>
+                {isOwner && (
+                  <button
+                    onClick={() => handleDelete(review.id)}
+                    className="ml-auto text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-2"
+                  >
+                    삭제
+                  </button>
+                )}
+              </div>
+              {review.content && (
+                <p className="text-white text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
+                  {review.content}
+                </p>
+              )}
+              <ReviewImages images={images} />
+            </div>
+          </article>
+        );
+      })}
+
+      {/* Twitter-style compose bar — fixed above bottom nav */}
       {isOwner && (
         <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none">
-          <div className="w-full max-w-xl pointer-events-auto">
-            <form
-              onSubmit={handleSubmit}
-              className="bg-zinc-950 border-t border-zinc-800 px-4 pt-3 pb-safe"
-            >
-              {/* Image previews */}
-              {pendingImages.length > 0 && (
-                <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
-                  {pendingImages.map((url, i) => (
-                    <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-700">
-                      <Image src={url} alt="첨부 이미지" fill className="object-cover" />
-                      <button
-                        type="button"
-                        className="absolute top-0.5 right-0.5 bg-black/70 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="w-full max-w-xl pointer-events-auto bg-zinc-950 border-t border-zinc-800">
 
-              <div className="flex items-end gap-2">
-                {/* Camera button */}
-                <button
-                  type="button"
-                  className="text-zinc-400 hover:text-sky-400 transition flex-shrink-0 mb-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                >
-                  {uploading ? '⏳' : '📷'}
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  capture="environment"
-                  className="hidden"
-                  onChange={handleImageChange}
-                />
-
-                {/* Auto-growing textarea */}
-                <textarea
-                  ref={textareaRef}
-                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-3 text-white placeholder-zinc-600 resize-none outline-none focus:border-sky-500 text-[15px] leading-relaxed max-h-40 overflow-y-auto"
-                  placeholder="후기를 남겨보세요..."
-                  value={content}
-                  rows={1}
-                  onChange={(e) => { setContent(e.target.value); autoResize(); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                      e.preventDefault();
-                      if (content.trim() || pendingImages.length > 0) handleSubmit(e as unknown as React.FormEvent);
-                    }
-                  }}
-                />
-
-                <button
-                  type="submit"
-                  disabled={submitting || (!content.trim() && pendingImages.length === 0)}
-                  className="bg-sky-500 hover:bg-sky-400 disabled:opacity-40 text-white font-bold rounded-full px-4 py-2.5 text-sm transition shrink-0 min-h-[44px]"
-                >
-                  {submitting ? '...' : '답글'}
-                </button>
+            {pendingImages.length > 0 && (
+              <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
+                {pendingImages.map((url, i) => (
+                  <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-700">
+                    <Image src={url} alt="" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
+                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/80 rounded-full flex items-center justify-center text-white text-xs"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            </form>
+            )}
+
+            <div className="flex items-center gap-3 px-4 py-2.5">
+              <div className="w-9 h-9 rounded-full bg-sky-500 shrink-0 flex items-center justify-center text-white text-sm">
+                🎭
+              </div>
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={(e) => { setContent(e.target.value); autoResize(); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    if (hasContent) handleSubmit(e as unknown as React.FormEvent);
+                  }
+                }}
+                placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
+                rows={1}
+                className="flex-1 bg-transparent outline-none text-white text-[15px] placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="text-sky-400 hover:bg-sky-400/10 rounded-full w-9 h-9 flex items-center justify-center transition text-lg shrink-0"
+                aria-label="사진 첨부"
+              >
+                {uploading ? '⏳' : '📷'}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageChange}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !hasContent}
+                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-4 py-1.5 text-sm transition shrink-0 min-h-[36px]"
+              >
+                {submitting ? '...' : '게시'}
+              </button>
+            </div>
+            <div className="pb-safe" />
           </div>
         </div>
       )}

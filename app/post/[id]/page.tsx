@@ -44,6 +44,12 @@ export default function PostPage() {
 
   useEffect(() => { fetchPost(); }, [fetchPost]);
 
+  async function handleDelete() {
+    if (!confirm('이 게시물을 삭제하시겠어요?')) return;
+    await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+    router.push('/');
+  }
+
   if (loading) {
     return <div className="flex justify-center items-center py-20 text-zinc-500">불러오는 중...</div>;
   }
@@ -52,53 +58,63 @@ export default function PostPage() {
   return (
     <div className="flex flex-col min-h-screen pb-16">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-black/80 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center gap-4">
+      <header className="sticky top-0 z-40 bg-black/80 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => router.push('/')}
           className="text-white hover:text-zinc-400 text-xl transition min-w-[44px] min-h-[44px] flex items-center"
         >
           ←
         </button>
-        <h1 className="text-white font-bold">공연 상세</h1>
+        <h1 className="text-white font-bold text-base">스레드</h1>
       </header>
 
-      {/* Main post */}
-      <article className="px-4 py-5 border-b border-zinc-800">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-lg">
+      {/* Main post — same avatar-column layout as thread items */}
+      <article className="flex gap-3 px-4 pt-4">
+        <div className="flex flex-col items-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center text-white text-lg shrink-0">
             🎭
           </div>
-          <div>
-            <p className="text-white font-bold">StageRecord</p>
-            <p className="text-zinc-500 text-sm">@stagerecord</p>
-          </div>
+          {/* Thread line connecting down to reviews */}
+          <div className="w-0.5 flex-1 bg-zinc-800 mt-1 min-h-[20px]" />
         </div>
 
-        <h2 className="text-white text-2xl font-bold mb-3">{post.title}</h2>
-
-        <div className="flex flex-wrap gap-2 mb-4 text-sm">
-          <span className="bg-zinc-800 text-zinc-300 rounded-full px-3 py-1.5">
-            📅 {formatDate(post.performance_date)}
-          </span>
-          <span className="bg-zinc-800 text-zinc-300 rounded-full px-3 py-1.5">
-            👁 {post.viewing_count}회 관람
-          </span>
-        </div>
-
-        {post.casting_board && (
-          <div className="relative w-full rounded-2xl overflow-hidden border border-zinc-800 mb-4" style={{ aspectRatio: '16/9' }}>
-            <Image
-              src={post.casting_board}
-              alt="캐스팅보드"
-              fill
-              className="object-contain bg-zinc-900"
-            />
+        <div className="flex-1 min-w-0 pb-4">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-white font-bold">StageRecord</span>
+            <span className="text-zinc-700 text-sm">·</span>
+            <span className="text-zinc-500 text-sm">{formatCreatedAt(post.created_at)}</span>
+            {isOwner && (
+              <button
+                onClick={handleDelete}
+                className="ml-auto text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-2"
+              >
+                삭제
+              </button>
+            )}
           </div>
-        )}
 
-        <p className="text-zinc-500 text-sm border-t border-zinc-800 pt-3">
-          {formatCreatedAt(post.created_at)}
-        </p>
+          <p className="text-white text-[17px] font-semibold leading-snug mt-0.5">{post.title}</p>
+
+          <div className="flex gap-2 mt-2 flex-wrap">
+            <span className="bg-zinc-800 text-zinc-300 text-xs rounded-full px-2.5 py-1">
+              📅 {formatDate(post.performance_date)}
+            </span>
+            <span className="bg-zinc-800 text-zinc-300 text-xs rounded-full px-2.5 py-1">
+              👁 {post.viewing_count}회 관람
+            </span>
+          </div>
+
+          {post.casting_board && (
+            <div className="mt-3 relative w-full rounded-2xl overflow-hidden border border-zinc-800" style={{ aspectRatio: '16/9' }}>
+              <Image
+                src={post.casting_board}
+                alt="캐스팅보드"
+                fill
+                className="object-contain bg-zinc-900"
+              />
+            </div>
+          )}
+        </div>
       </article>
 
       <ReviewThread postId={post.id} isOwner={isOwner} />

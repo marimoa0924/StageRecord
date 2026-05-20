@@ -19,11 +19,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json();
   const { content, images } = body;
 
-  if (!content?.trim()) {
-    return NextResponse.json({ error: '내용을 입력해주세요.' }, { status: 400 });
+  const imageList = Array.isArray(images) ? images : [];
+  if (!content?.trim() && imageList.length === 0) {
+    return NextResponse.json({ error: '내용이나 이미지를 추가해주세요.' }, { status: 400 });
   }
 
-  const imagesJson = JSON.stringify(Array.isArray(images) ? images : []);
+  const imagesJson = JSON.stringify(imageList);
   const db = getDb();
   const result = db.prepare(`
     INSERT INTO reviews (post_id, content, images) VALUES (?, ?, ?)

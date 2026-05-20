@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 
-// Show name = strip leading date word, then strip " 자[Korean]..." ordinal suffix
+// Show name = strip leading date word, then strip optional performance-type word
+// (낮공|밤공|세미막|페어막) and the Korean ordinal suffix (자[가-힣]+...)
+// "0705 차미 낮공 자넷" → "차미"
 // "0824 수영장의 사과 자일곱 자막" → "수영장의 사과"
-// "0824 차미 자아홉" → "차미"
-const SHOW_NAME_EXPR = `TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))`;
-
 export async function GET() {
   try {
     await ready;
     const rows = await sql`
       WITH fn AS (
         SELECT
-          TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) AS folder_name,
+          TRIM(REGEXP_REPLACE(
+            REGEXP_REPLACE(title, '^[^ ]+ ', ''),
+            ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''
+          )) AS folder_name,
           viewing_count,
           performance_date
         FROM posts

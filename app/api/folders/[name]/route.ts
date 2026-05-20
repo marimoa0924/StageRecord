@@ -4,7 +4,7 @@ import { sql, ready } from '@/lib/db';
 const CHIKMUK = '찍먹극';
 
 // Same extraction as /api/folders: strip date word, then strip " 자[Korean]..." ordinal suffix
-const SHOW_NAME = `TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))`;
+const SHOW_NAME = `TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))`;
 
 export async function GET(
   req: NextRequest,
@@ -28,9 +28,9 @@ export async function GET(
                                               AND visitor_id = ${vid}) AS liked_by_me
         FROM posts p
         WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) IN (
-          SELECT TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))
+          SELECT TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))
           FROM posts
-          GROUP BY TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))
+          GROUP BY TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))
           HAVING COUNT(*) = 1
         )
         ORDER BY p.performance_date ASC

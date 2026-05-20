@@ -16,7 +16,7 @@ const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 function showName(title: string) {
   return title
     .replace(/^[^ ]+ /, '')         // strip leading date word
-    .replace(/ 자[가-힣]+.*$/, '')  // strip ordinal suffix and beyond
+    .replace(/ (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$/, '')  // strip optional perf-type and ordinal
     .trim() || title;
 }
 

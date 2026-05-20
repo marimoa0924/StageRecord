@@ -2,12 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+function getVid(req: NextRequest): string {
+  return (
+    req.cookies.get('vid')?.value ||
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    '0'
+  );
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ready;
     const { id } = await params;
+    const vid = getVid(req);
+
     const reviews = await sql`
-      SELECT * FROM reviews WHERE post_id = ${id} ORDER BY created_at ASC
+      SELECT
+        r.*,
+        COUNT(DISTINCT rl.id)::int AS like_count,
+        MAX(CASE WHEN rl.visitor_id = ${vid} THEN 1 ELSE 0 END) AS liked_by_me
+      FROM reviews r
+      LEFT JOIN review_likes rl ON rl.review_id = r.id
+      WHERE r.post_id = ${id}
+      GROUP BY r.id
+      ORDER BY r.created_at ASC
     `;
     return NextResponse.json(reviews);
   } catch (e) {

@@ -5,17 +5,14 @@ import { requireOwner } from '@/lib/requireOwner';
 export async function GET(req: NextRequest) {
   try {
     await ready;
-    const ip =
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-      req.headers.get('x-real-ip') ||
-      '0.0.0.0';
+    const vid = req.cookies.get('vid')?.value ?? req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '0';
 
     const posts = await sql`
       SELECT
         p.*,
         COUNT(DISTINCT r.id)::int   AS review_count,
         COUNT(DISTINCT l.id)::int   AS like_count,
-        MAX(CASE WHEN l.ip_address = ${ip} THEN 1 ELSE 0 END) AS liked_by_me
+        MAX(CASE WHEN l.visitor_id = ${vid} THEN 1 ELSE 0 END) AS liked_by_me
       FROM posts p
       LEFT JOIN reviews r ON r.post_id = p.id
       LEFT JOIN likes   l ON l.post_id = p.id

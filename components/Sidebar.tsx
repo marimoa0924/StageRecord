@@ -50,6 +50,16 @@ export default function Sidebar({ onNewPost }: Props) {
           }
           label="캘린더"
         />
+        <SideNavItem
+          href="/search"
+          active={pathname === '/search'}
+          icon={
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={pathname === '/search' ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          }
+          label="검색"
+        />
         <button
           onClick={toggle}
           className="flex items-center gap-4 px-3 py-3 rounded-2xl transition text-[17px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900/60 font-medium"

@@ -56,6 +56,17 @@ export default function BottomNav({ onNewPost }: Props) {
           <span className="text-[10px] font-medium">캘린더</span>
         </Link>
 
+        <Link
+          href="/search"
+          className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px]
+            ${pathname === '/search' ? 'text-sky-500' : 'text-zinc-400 dark:text-zinc-500'}`}
+        >
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={pathname === '/search' ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span className="text-[10px] font-medium">검색</span>
+        </Link>
+
         <button
           onClick={toggle}
           className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px] text-zinc-400 dark:text-zinc-500 hover:text-sky-500"

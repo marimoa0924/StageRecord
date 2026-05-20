@@ -59,7 +59,8 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 function SearchResultCard({ post, query }: { post: SearchPost; query: string }) {
-  const hasMatchingReviews = post.matching_reviews?.length > 0;
+  const reviews = Array.isArray(post.matching_reviews) ? post.matching_reviews : [];
+  const hasMatchingReviews = reviews.length > 0;
 
   return (
     <Link href={`/post/${post.id}`} className="block">
@@ -106,8 +107,8 @@ function SearchResultCard({ post, query }: { post: SearchPost; query: string }) 
         </div>
 
         {/* Matching review threads */}
-        {hasMatchingReviews && post.matching_reviews.map((review, idx) => {
-          const isLast = idx === post.matching_reviews.length - 1;
+        {hasMatchingReviews && reviews.map((review, idx) => {
+          const isLast = idx === reviews.length - 1;
           return (
             <div key={review.id} className="flex gap-3 mt-0">
               {/* Thread connector */}

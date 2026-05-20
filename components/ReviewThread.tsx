@@ -8,6 +8,8 @@ interface Review {
   content: string;
   images: string;
   created_at: string;
+  like_count?: number;
+  liked_by_me?: number;
 }
 
 function formatTime(iso: string) {
@@ -28,24 +30,62 @@ function ReviewImages({ images }: { images: string[] }) {
   if (images.length === 0) return null;
   if (images.length === 1) {
     return (
-      <div className="mt-2 relative w-full rounded-2xl overflow-hidden border border-zinc-800 aspect-video bg-zinc-900">
+      <div className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-800/60 aspect-video bg-zinc-950">
         <Image src={images[0]} alt="" fill className="object-cover" />
       </div>
     );
   }
   return (
-    <div className={`mt-2 grid gap-0.5 rounded-2xl overflow-hidden ${images.length <= 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+    <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
       {images.slice(0, 4).map((url, i) => (
-        <div key={i} className="relative aspect-square bg-zinc-900">
+        <div key={i} className="relative aspect-square bg-zinc-950">
           <Image src={url} alt="" fill className="object-cover" />
           {i === 3 && images.length > 4 && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
               +{images.length - 4}
             </div>
           )}
         </div>
       ))}
     </div>
+  );
+}
+
+function ReviewLikeButton({
+  postId, reviewId, initialCount, likedByMe,
+}: {
+  postId: number; reviewId: number; initialCount: number; likedByMe: boolean;
+}) {
+  const [liked, setLiked] = useState(likedByMe);
+  const [count, setCount] = useState(initialCount);
+  const [loading, setLoading] = useState(false);
+
+  async function toggle() {
+    if (loading) return;
+    setLoading(true);
+    const res = await fetch(`/api/posts/${postId}/reviews/${reviewId}/like`, { method: 'POST' });
+    const data = await res.json();
+    setLiked(data.liked);
+    setCount(data.count);
+    setLoading(false);
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className={`flex items-center gap-1.5 text-[13px] transition min-h-[36px] ${liked ? 'text-pink-500' : 'text-zinc-600 hover:text-pink-400'}`}
+    >
+      {liked ? (
+        <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      ) : (
+        <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      )}
+      {count > 0 && <span>{count}</span>}
+    </button>
   );
 }
 
@@ -66,7 +106,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const fetchReviews = useCallback(async () => {
     const res = await fetch(`/api/posts/${postId}/reviews`);
     const data = await res.json();
-    setReviews(data);
+    setReviews(Array.isArray(data) ? data : []);
   }, [postId]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
@@ -88,7 +128,8 @@ export default function ReviewThread({ postId, isOwner }: Props) {
       fd.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
-      urls.push(data.url);
+      if (data.url) urls.push(data.url);
+      else alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
     }
     setPendingImages((prev) => [...prev, ...urls]);
     setUploading(false);
@@ -126,7 +167,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   return (
     <div className={isOwner ? 'pb-36' : 'pb-4'}>
       {reviews.length === 0 && !isOwner && (
-        <p className="text-zinc-600 text-center py-10 text-sm">아직 후기가 없습니다.</p>
+        <p className="text-zinc-700 text-center py-10 text-sm">아직 후기가 없습니다.</p>
       )}
 
       {reviews.map((review, idx) => {
@@ -136,45 +177,52 @@ export default function ReviewThread({ postId, isOwner }: Props) {
 
         return (
           <article key={review.id} className="flex gap-3 px-4 pt-4">
-            <div className="flex flex-col items-center shrink-0">
-              <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-white shrink-0">
-                🎭
-              </div>
-              {showLine && (
-                <div className="w-0.5 flex-1 bg-zinc-800 mt-1 min-h-[16px]" />
-              )}
+            {/* Thread line (no avatar) */}
+            <div className="flex flex-col items-center shrink-0 w-4">
+              <div className={`w-px bg-zinc-800 ${showLine ? 'flex-1 min-h-full' : 'h-3'}`} />
             </div>
 
-            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-800' : ''}`}>
+            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-800/60' : ''}`}>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-white font-bold text-sm">StageRecord</span>
+                <span className="text-white font-bold text-sm">주인장</span>
                 <span className="text-zinc-700 text-[13px]">·</span>
                 <span className="text-zinc-500 text-[13px]">{formatTime(review.created_at)}</span>
                 {isOwner && (
                   <button
                     onClick={() => handleDelete(review.id)}
-                    className="ml-auto text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-2"
+                    className="ml-auto text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
                   >
                     삭제
                   </button>
                 )}
               </div>
+
               {review.content && (
-                <p className="text-white text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
+                <p className="text-[#e7e9ea] text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
                   {review.content}
                 </p>
               )}
+
               <ReviewImages images={images} />
+
+              {/* Like button */}
+              <div className="mt-2">
+                <ReviewLikeButton
+                  postId={postId}
+                  reviewId={review.id}
+                  initialCount={review.like_count ?? 0}
+                  likedByMe={!!review.liked_by_me}
+                />
+              </div>
             </div>
           </article>
         );
       })}
 
-      {/* Twitter-style compose bar — fixed above bottom nav */}
+      {/* Compose bar — fixed above bottom nav */}
       {isOwner && (
-        <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none">
-          <div className="w-full max-w-xl pointer-events-auto bg-zinc-950 border-t border-zinc-800">
-
+        <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0">
+          <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-zinc-950 border-t border-zinc-800/60">
             {pendingImages.length > 0 && (
               <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
                 {pendingImages.map((url, i) => (
@@ -193,9 +241,6 @@ export default function ReviewThread({ postId, isOwner }: Props) {
             )}
 
             <div className="flex items-center gap-3 px-4 py-2.5">
-              <div className="w-9 h-9 rounded-full bg-sky-500 shrink-0 flex items-center justify-center text-white text-sm">
-                🎭
-              </div>
               <textarea
                 ref={textareaRef}
                 value={content}
@@ -214,23 +259,27 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="text-sky-400 hover:bg-sky-400/10 rounded-full w-9 h-9 flex items-center justify-center transition text-lg shrink-0"
+                className="text-sky-400 hover:bg-sky-400/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
                 aria-label="사진 첨부"
               >
-                {uploading ? '⏳' : '📷'}
+                {uploading ? (
+                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                )}
               </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleImageChange}
-              />
+              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !hasContent}
-                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-4 py-1.5 text-sm transition shrink-0 min-h-[36px]"
+                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-4 py-1.5 text-sm transition shrink-0"
               >
                 {submitting ? '...' : '게시'}
               </button>

@@ -1,6 +1,5 @@
 import { neon } from '@neondatabase/serverless';
 
-// Vercel Neon integration sets DATABASE_URL; some setups use POSTGRES_URL
 const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
 export const sql = DATABASE_URL ? neon(DATABASE_URL) : (null as never);
@@ -30,9 +29,18 @@ export const ready: Promise<void> = DATABASE_URL
         CREATE TABLE IF NOT EXISTS likes (
           id         SERIAL PRIMARY KEY,
           post_id    INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-          ip_address TEXT NOT NULL,
+          visitor_id TEXT NOT NULL,
           created_at TIMESTAMPTZ DEFAULT NOW(),
-          UNIQUE(post_id, ip_address)
+          UNIQUE(post_id, visitor_id)
+        )
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS review_likes (
+          id         SERIAL PRIMARY KEY,
+          review_id  INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+          visitor_id TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          UNIQUE(review_id, visitor_id)
         )
       `;
     })().catch((e) => console.error('[db init]', e))

@@ -96,7 +96,7 @@ export default function PostPage() {
 
         <div className="flex-1 min-w-0 pb-4">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-white font-bold text-[15px]">StageRecord</span>
+            <span className="text-white font-bold text-[15px]">주인장</span>
             <span className="text-zinc-700 text-[13px]">·</span>
             <span className="text-zinc-500 text-[13px]">{formatCreatedAt(post.created_at)}</span>
             {isOwner && (

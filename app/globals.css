@@ -5,25 +5,36 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: #000;
-  color: #fff;
+  color: #e7e9ea;
   overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
-textarea::-webkit-scrollbar {
+::-webkit-scrollbar {
   width: 4px;
 }
-textarea::-webkit-scrollbar-thumb {
-  background: #333;
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
   border-radius: 2px;
 }
 
-/* iOS safe area for bottom nav */
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+}
+
+.feed-card {
+  transition: background-color 0.12s ease;
+}
+.feed-card:active {
+  background-color: rgba(255, 255, 255, 0.03);
 }

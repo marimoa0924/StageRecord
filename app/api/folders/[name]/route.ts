@@ -3,6 +3,9 @@ import { sql, ready } from '@/lib/db';
 
 const CHIKMUK = '찍먹극';
 
+// Same extraction as /api/folders: strip date word, then strip " 자[Korean]..." ordinal suffix
+const SHOW_NAME = `TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))`;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ name: string }> },
@@ -24,10 +27,10 @@ export async function GET(
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
                                               AND visitor_id = ${vid}) AS liked_by_me
         FROM posts p
-        WHERE COALESCE(NULLIF(SPLIT_PART(p.title, ' ', 2), ''), p.title) IN (
-          SELECT COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
+        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) IN (
+          SELECT TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))
           FROM posts
-          GROUP BY COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
+          GROUP BY TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))
           HAVING COUNT(*) = 1
         )
         ORDER BY p.performance_date ASC
@@ -40,7 +43,7 @@ export async function GET(
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
                                               AND visitor_id = ${vid}) AS liked_by_me
         FROM posts p
-        WHERE COALESCE(NULLIF(SPLIT_PART(p.title, ' ', 2), ''), p.title) = ${title}
+        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) = ${title}
         ORDER BY p.performance_date ASC
       `;
     }

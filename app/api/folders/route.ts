@@ -1,21 +1,30 @@
 import { NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 
-// Extract the real show name: 2nd space-delimited word of the title
-// e.g. "0824 차미 자아홉 자막" → "차미"
-// Falls back to full title if there's no space.
+// Show name = strip leading date word, then strip " 자[Korean]..." ordinal suffix
+// "0824 수영장의 사과 자일곱 자막" → "수영장의 사과"
+// "0824 차미 자아홉" → "차미"
+const SHOW_NAME_EXPR = `TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', ''))`;
+
 export async function GET() {
   try {
     await ready;
     const rows = await sql`
+      WITH fn AS (
+        SELECT
+          TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) AS folder_name,
+          viewing_count,
+          performance_date
+        FROM posts
+      )
       SELECT
-        COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title) AS folder_name,
-        COUNT(*)::int            AS post_count,
-        MAX(viewing_count)::int  AS max_viewing,
-        MIN(performance_date)    AS first_date,
-        MAX(performance_date)    AS latest_date
-      FROM posts
-      GROUP BY COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
+        folder_name,
+        COUNT(*)::int           AS post_count,
+        MAX(viewing_count)::int AS max_viewing,
+        MIN(performance_date)   AS first_date,
+        MAX(performance_date)   AS latest_date
+      FROM fn
+      GROUP BY folder_name
       ORDER BY MAX(performance_date) DESC
     `;
 

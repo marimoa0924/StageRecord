@@ -12,10 +12,12 @@ interface Post {
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
-// "0824 차미 자아홉 자막" → "차미"
+// "0824 수영장의 사과 자일곱 자막" → "수영장의 사과"
 function showName(title: string) {
-  const parts = title.split(' ');
-  return parts.length >= 2 ? parts[1] : title;
+  return title
+    .replace(/^[^ ]+ /, '')         // strip leading date word
+    .replace(/ 자[가-힣]+.*$/, '')  // strip ordinal suffix and beyond
+    .trim() || title;
 }
 
 export default function CalendarGrid() {

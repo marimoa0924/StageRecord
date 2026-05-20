@@ -57,6 +57,18 @@ export default function BottomNav({ onNewPost }: Props) {
         </Link>
 
         <Link
+          href="/folders"
+          className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px]
+            ${pathname.startsWith('/folders') ? 'text-sky-500' : 'text-zinc-400 dark:text-zinc-500'}`}
+        >
+          {pathname.startsWith('/folders') ? (
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+          ) : (
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          )}
+          <span className="text-[10px] font-medium">폴더</span>
+        </Link>
+        <Link
           href="/search"
           className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px]
             ${pathname === '/search' ? 'text-sky-500' : 'text-zinc-400 dark:text-zinc-500'}`}

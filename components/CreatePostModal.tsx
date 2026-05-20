@@ -48,26 +48,33 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    // Bottom sheet on mobile, centered modal on desktop
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="w-full max-w-lg bg-black border border-zinc-700 rounded-2xl p-6 mx-4"
+        className="w-full sm:max-w-lg bg-zinc-950 border border-zinc-700 rounded-t-3xl sm:rounded-2xl p-6 mx-0 sm:mx-4 max-h-[92dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Drag handle (mobile) */}
+        <div className="flex justify-center mb-4 sm:hidden">
+          <div className="w-10 h-1 bg-zinc-600 rounded-full" />
+        </div>
+
         <div className="flex items-center justify-between mb-5">
-          <button onClick={onClose} className="text-white hover:text-zinc-400 text-xl font-bold">✕</button>
+          <button onClick={onClose} className="text-white hover:text-zinc-400 text-2xl font-bold p-1 min-w-[44px] min-h-[44px] flex items-center">✕</button>
           <h2 className="text-white font-bold text-lg">공연 기록 추가</h2>
-          <div className="w-6" />
+          <div className="w-11" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-zinc-400 text-sm block mb-1">극 제목 *</label>
             <input
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-sky-500"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-sky-500 text-base"
               placeholder="뮤지컬 이름을 입력하세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              autoFocus
             />
           </div>
 
@@ -76,18 +83,18 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
               <label className="text-zinc-400 text-sm block mb-1">관람 날짜 *</label>
               <input
                 type="date"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 text-base"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
               />
             </div>
-            <div className="w-36">
+            <div className="w-28">
               <label className="text-zinc-400 text-sm block mb-1">관람 횟수</label>
               <input
                 type="number"
                 min={1}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 text-base"
                 value={viewingCount}
                 onChange={(e) => setViewingCount(Number(e.target.value))}
               />
@@ -97,7 +104,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
           <div>
             <label className="text-zinc-400 text-sm block mb-1">캐스팅보드</label>
             <div
-              className="w-full bg-zinc-900 border border-zinc-700 border-dashed rounded-xl p-4 text-center cursor-pointer hover:border-sky-500 transition"
+              className="w-full bg-zinc-900 border border-zinc-700 border-dashed rounded-xl p-4 text-center cursor-pointer hover:border-sky-500 active:border-sky-400 transition min-h-[80px] flex items-center justify-center"
               onClick={() => fileRef.current?.click()}
             >
               {imageUrl ? (
@@ -106,17 +113,23 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
                 </div>
               ) : (
                 <span className="text-zinc-500 text-sm">
-                  {uploading ? '업로드 중...' : '이미지를 클릭해서 업로드하세요'}
+                  {uploading ? '업로드 중...' : '📷 탭하여 사진 업로드'}
                 </span>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </div>
 
           <button
             type="submit"
             disabled={submitting || !title || !date}
-            className="w-full bg-sky-500 hover:bg-sky-400 disabled:opacity-40 text-white font-bold rounded-full py-3 transition"
+            className="w-full bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full py-4 transition text-base min-h-[52px]"
           >
             {submitting ? '저장 중...' : '게시하기'}
           </button>

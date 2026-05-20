@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ReviewThread from '@/components/ReviewThread';
+import { useOwner } from '@/lib/useOwner';
 
 interface Post {
   id: number;
@@ -29,6 +30,7 @@ function formatCreatedAt(iso: string) {
 export default function PostPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { isOwner } = useOwner();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,20 +45,17 @@ export default function PostPage() {
   useEffect(() => { fetchPost(); }, [fetchPost]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20 text-zinc-500">불러오는 중...</div>
-    );
+    return <div className="flex justify-center items-center py-20 text-zinc-500">불러오는 중...</div>;
   }
-
   if (!post) return null;
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen pb-16">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-black/80 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center gap-4">
         <button
           onClick={() => router.push('/')}
-          className="text-white hover:text-zinc-400 text-xl transition"
+          className="text-white hover:text-zinc-400 text-xl transition min-w-[44px] min-h-[44px] flex items-center"
         >
           ←
         </button>
@@ -77,11 +76,11 @@ export default function PostPage() {
 
         <h2 className="text-white text-2xl font-bold mb-3">{post.title}</h2>
 
-        <div className="flex flex-wrap gap-3 mb-4 text-sm">
-          <span className="bg-zinc-800 text-zinc-300 rounded-full px-3 py-1">
+        <div className="flex flex-wrap gap-2 mb-4 text-sm">
+          <span className="bg-zinc-800 text-zinc-300 rounded-full px-3 py-1.5">
             📅 {formatDate(post.performance_date)}
           </span>
-          <span className="bg-zinc-800 text-zinc-300 rounded-full px-3 py-1">
+          <span className="bg-zinc-800 text-zinc-300 rounded-full px-3 py-1.5">
             👁 {post.viewing_count}회 관람
           </span>
         </div>
@@ -102,8 +101,7 @@ export default function PostPage() {
         </p>
       </article>
 
-      {/* Reviews */}
-      <ReviewThread postId={post.id} />
+      <ReviewThread postId={post.id} isOwner={isOwner} />
     </div>
   );
 }

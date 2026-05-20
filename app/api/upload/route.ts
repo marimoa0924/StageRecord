@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
+import { requireOwner } from '@/lib/requireOwner';
 
 export async function POST(req: NextRequest) {
+  const check = await requireOwner();
+  if ('error' in check) return check.error;
+
   const formData = await req.formData();
   const file = formData.get('file') as File;
 

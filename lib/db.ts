@@ -11,6 +11,7 @@ function getDb() {
   }
 
   const db = new Database(DB_PATH);
+  db.pragma('foreign_keys = ON');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS posts (
@@ -26,10 +27,26 @@ function getDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       post_id INTEGER NOT NULL,
       content TEXT NOT NULL,
+      images TEXT NOT NULL DEFAULT '[]',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      ip_address TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(post_id, ip_address),
+      FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+    );
   `);
+
+  // Migrate: add images column to existing reviews table if missing
+  const cols = db.pragma('table_info(reviews)') as { name: string }[];
+  if (!cols.some((c) => c.name === 'images')) {
+    db.exec(`ALTER TABLE reviews ADD COLUMN images TEXT NOT NULL DEFAULT '[]'`);
+  }
 
   return db;
 }

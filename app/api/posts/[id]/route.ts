@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import getDb from '@/lib/db';
+import { requireOwner } from '@/lib/requireOwner';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -10,6 +11,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const check = await requireOwner();
+  if ('error' in check) return check.error;
+
   const { id } = await params;
   const db = getDb();
   db.prepare('DELETE FROM posts WHERE id = ?').run(id);

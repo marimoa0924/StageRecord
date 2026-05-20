@@ -24,9 +24,10 @@ export async function GET(
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
                                               AND visitor_id = ${vid}) AS liked_by_me
         FROM posts p
-        WHERE p.title IN (
-          SELECT title FROM posts
-          GROUP BY title
+        WHERE COALESCE(NULLIF(SPLIT_PART(p.title, ' ', 2), ''), p.title) IN (
+          SELECT COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
+          FROM posts
+          GROUP BY COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
           HAVING SUM(viewing_count) = 1
         )
         ORDER BY p.performance_date ASC
@@ -39,7 +40,7 @@ export async function GET(
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
                                               AND visitor_id = ${vid}) AS liked_by_me
         FROM posts p
-        WHERE p.title = ${title}
+        WHERE COALESCE(NULLIF(SPLIT_PART(p.title, ' ', 2), ''), p.title) = ${title}
         ORDER BY p.performance_date ASC
       `;
     }

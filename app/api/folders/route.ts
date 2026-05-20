@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 
-// Each row: title, total_views (sum of viewing_count), post_count, first_date, latest_date
+// Extract the real show name: 2nd space-delimited word of the title
+// e.g. "0824 차미 자아홉 자막" → "차미"
+// Falls back to full title if there's no space.
 export async function GET() {
   try {
     await ready;
     const rows = await sql`
       SELECT
-        title,
+        COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title) AS folder_name,
         SUM(viewing_count)::int  AS total_views,
         COUNT(*)::int            AS post_count,
         MIN(performance_date)    AS first_date,
         MAX(performance_date)    AS latest_date
       FROM posts
-      GROUP BY title
+      GROUP BY COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
       ORDER BY MAX(performance_date) DESC
     `;
 

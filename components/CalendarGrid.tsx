@@ -12,6 +12,12 @@ interface Post {
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
+// "0824 차미 자아홉 자막" → "차미"
+function showName(title: string) {
+  const parts = title.split(' ');
+  return parts.length >= 2 ? parts[1] : title;
+}
+
 export default function CalendarGrid() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -84,7 +90,7 @@ export default function CalendarGrid() {
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 px-3 mb-1">
+      <div className="grid grid-cols-7 px-2 mb-1">
         {DAY_NAMES.map((d, i) => (
           <div
             key={d}
@@ -97,17 +103,18 @@ export default function CalendarGrid() {
 
       {/* Calendar grid */}
       {loading ? (
-        <div className="grid grid-cols-7 gap-px px-3">
+        <div className="grid grid-cols-7 gap-1 px-2">
           {[...Array(35)].map((_, i) => (
-            <div key={i} className="aspect-square rounded-lg bg-zinc-100 dark:bg-zinc-900/40 animate-pulse" />
+            <div key={i} className="min-h-[60px] rounded-lg bg-zinc-100 dark:bg-zinc-900/40 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-7 px-3 gap-px">
+        <div className="grid grid-cols-7 gap-1 px-2">
           {cells.map((day, idx) => {
-            if (!day) return <div key={idx} className="aspect-square" />;
+            if (!day) return <div key={idx} className="min-h-[60px]" />;
             const ds = dateStr(day);
-            const hasPosts = postDateMap.has(ds);
+            const dayPosts = postDateMap.get(ds) ?? [];
+            const hasPosts = dayPosts.length > 0;
             const isToday = ds === todayStr;
             const isSelected = ds === selectedDate;
             const isSun = idx % 7 === 0;
@@ -117,12 +124,20 @@ export default function CalendarGrid() {
               <button
                 key={idx}
                 onClick={() => setSelectedDate(ds === selectedDate ? null : ds)}
-                className={`aspect-square flex flex-col items-center justify-center gap-0.5 rounded-lg transition
-                  ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/60'}`}
+                className={`flex flex-col items-start p-1.5 min-h-[60px] rounded-lg transition text-left
+                  ${isSelected && hasPosts
+                    ? 'bg-sky-500'
+                    : isSelected
+                    ? 'bg-zinc-100 dark:bg-zinc-800'
+                    : hasPosts
+                    ? 'bg-sky-50 dark:bg-sky-950/60 border border-sky-200/60 dark:border-sky-800/40'
+                    : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/60'}`}
               >
-                <span className={`text-xs font-medium w-7 h-7 flex items-center justify-center rounded-full
-                  ${isToday
+                <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full shrink-0
+                  ${isToday && !(isSelected && hasPosts)
                     ? 'bg-sky-500 text-white font-bold'
+                    : isSelected && hasPosts
+                    ? 'text-white font-bold'
                     : isSelected
                     ? 'text-zinc-900 dark:text-white font-semibold'
                     : isSun
@@ -134,7 +149,15 @@ export default function CalendarGrid() {
                   {day}
                 </span>
                 {hasPosts && (
-                  <span className={`w-1 h-1 rounded-full ${isToday ? 'bg-white' : 'bg-sky-500'}`} />
+                  <span
+                    className={`text-[9px] leading-tight w-full mt-0.5 font-semibold break-keep
+                      ${isSelected ? 'text-white/90' : 'text-sky-600 dark:text-sky-400'}`}
+                  >
+                    {showName(dayPosts[0].title)}
+                    {dayPosts.length > 1 && (
+                      <span className="opacity-70"> +{dayPosts.length - 1}</span>
+                    )}
+                  </span>
                 )}
               </button>
             );
@@ -142,7 +165,7 @@ export default function CalendarGrid() {
         </div>
       )}
 
-      {/* Selected date */}
+      {/* Selected date panel */}
       {selectedDate && (
         <div className="mt-5 px-4">
           <p className="text-zinc-400 dark:text-zinc-500 text-xs font-medium uppercase tracking-wide mb-3">

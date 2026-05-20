@@ -24,7 +24,11 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
     fd.append('file', file);
     const res = await fetch('/api/upload', { method: 'POST', body: fd });
     const data = await res.json();
-    setImageUrl(data.url);
+    if (data.url) {
+      setImageUrl(data.url);
+    } else {
+      alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+    }
     setUploading(false);
   }
 

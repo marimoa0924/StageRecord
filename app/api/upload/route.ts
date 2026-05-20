@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { requireOwner } from '@/lib/requireOwner';
 
+export async function GET() {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) return NextResponse.json({ ok: false, reason: 'BLOB_READ_WRITE_TOKEN not set' });
+  const preview = `${token.slice(0, 20)}...`;
+  return NextResponse.json({ ok: true, tokenPreview: preview });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const check = await requireOwner();
     if ('error' in check) return check.error;
 
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      return NextResponse.json({ error: 'Blob storage가 설정되지 않았습니다. Vercel Storage에서 Blob을 생성해주세요.' }, { status: 503 });
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      return NextResponse.json({ error: 'BLOB_READ_WRITE_TOKEN이 설정되지 않았습니다.' }, { status: 503 });
     }
 
     const formData = await req.formData();
@@ -21,10 +29,11 @@ export async function POST(req: NextRequest) {
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const { url } = await put(uniqueName, file, { access: 'public' });
+    const { url } = await put(uniqueName, file, { access: 'public', token });
     return NextResponse.json({ url }, { status: 201 });
   } catch (e) {
     console.error('[POST /api/upload]', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

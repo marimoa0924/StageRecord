@@ -28,7 +28,7 @@ export async function GET(
           SELECT COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
           FROM posts
           GROUP BY COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title)
-          HAVING SUM(viewing_count) = 1
+          HAVING COUNT(*) = 1
         )
         ORDER BY p.performance_date ASC
       `;

@@ -10,8 +10,8 @@ export async function GET() {
     const rows = await sql`
       SELECT
         COALESCE(NULLIF(SPLIT_PART(title, ' ', 2), ''), title) AS folder_name,
-        SUM(viewing_count)::int  AS total_views,
         COUNT(*)::int            AS post_count,
+        MAX(viewing_count)::int  AS max_viewing,
         MIN(performance_date)    AS first_date,
         MAX(performance_date)    AS latest_date
       FROM posts
@@ -19,8 +19,8 @@ export async function GET() {
       ORDER BY MAX(performance_date) DESC
     `;
 
-    const chikmuk = rows.filter((r) => (r.total_views as number) === 1);
-    const folders = rows.filter((r) => (r.total_views as number) > 1);
+    const chikmuk = rows.filter((r) => (r.post_count as number) === 1);
+    const folders = rows.filter((r) => (r.post_count as number) > 1);
 
     return NextResponse.json({ chikmuk_count: chikmuk.length, folders });
   } catch (e) {

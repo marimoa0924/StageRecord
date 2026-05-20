@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface FolderRow {
-  title: string;
-  total_views: number;
+  folder_name: string;
   post_count: number;
+  max_viewing: number;
   first_date: string;
   latest_date: string;
 }
@@ -103,11 +103,11 @@ export default function FoldersPage() {
 
             {data.folders.map((folder) => (
               <FolderCard
-                key={folder.title}
-                href={`/folders/${encodeURIComponent(folder.title)}`}
+                key={folder.folder_name}
+                href={`/folders/${encodeURIComponent(folder.folder_name)}`}
                 icon="🎭"
-                title={folder.title}
-                sub={`총 ${folder.total_views}회 관람 · ${folder.post_count}개 기록`}
+                title={folder.folder_name}
+                sub={`${folder.post_count}번 관람 · 최근 ${folder.max_viewing}회차`}
                 meta={
                   folder.first_date === folder.latest_date
                     ? formatDate(folder.first_date)

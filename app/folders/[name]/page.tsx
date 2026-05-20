@@ -62,7 +62,7 @@ export default function FolderDetailPage() {
           <span className="ml-auto text-zinc-400 dark:text-zinc-600 text-sm shrink-0">
             {isChinkmuk
               ? `${posts.length}개 작품`
-              : `총 ${posts.reduce((s, p) => s + p.viewing_count, 0)}회`}
+              : `${posts.length}번 관람`}
           </span>
         )}
       </header>

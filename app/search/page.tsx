@@ -194,7 +194,7 @@ function SearchContent() {
           </svg>
         </button>
 
-        <div className="flex-1 flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 rounded-full px-4 h-9 border border-zinc-200 dark:border-zinc-800 focus-within:border-sky-400 transition">
+        <div className="flex-1 min-w-0 flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 rounded-full px-4 h-9 border border-zinc-200 dark:border-zinc-800 focus-within:border-sky-400 transition">
           <svg className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -203,7 +203,7 @@ function SearchContent() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="공연 제목, 후기 내용 검색..."
-            className="flex-1 bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 text-[15px]"
+            className="flex-1 min-w-0 bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
           />
           {query && (
             <button

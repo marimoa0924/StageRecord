@@ -251,7 +251,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 }}
                 placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
                 rows={1}
-                className="flex-1 bg-transparent outline-none text-zinc-900 dark:text-white text-[15px] placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
+                className="flex-1 min-w-0 bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
               />
               <button
                 type="button"

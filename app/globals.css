@@ -41,15 +41,12 @@ html.dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 ::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
-  border-radius: 2px;
-}
-html.dark ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+  display: none;
 }
 
 .pb-safe {

@@ -36,6 +36,6 @@ export async function GET() {
     return NextResponse.json({ chikmuk_count: chikmuk.length, folders });
   } catch (e) {
     console.error('[GET /api/folders]', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 
-function getVid(req: NextRequest): string {
-  return (
-    req.cookies.get('vid')?.value ||
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    '0'
-  );
-}
-
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; reviewId: string }> },
@@ -16,7 +8,7 @@ export async function POST(
   try {
     await ready;
     const { reviewId } = await params;
-    const vid = getVid(req);
+    const vid = req.cookies.get('vid')?.value ?? '0';
 
     const [existing] = await sql`
       SELECT id FROM review_likes WHERE review_id = ${reviewId} AND visitor_id = ${vid}
@@ -33,6 +25,6 @@ export async function POST(
     }
   } catch (e) {
     console.error('[POST /api/posts/[id]/reviews/[reviewId]/like]', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

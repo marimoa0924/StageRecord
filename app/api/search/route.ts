@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 
+const MAX_QUERY_LENGTH = 100;
+
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 export async function GET(req: NextRequest) {
   try {
     await ready;
     const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
     if (!q) return NextResponse.json([]);
+    if (q.length > MAX_QUERY_LENGTH) {
+      return NextResponse.json({ error: '검색어가 너무 깁니다.' }, { status: 400 });
+    }
 
-    const vid = req.cookies.get('vid')?.value ??
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '0';
-    const pattern = `%${q}%`;
+    const vid = req.cookies.get('vid')?.value ?? '0';
+    const pattern = `%${escapeLike(q)}%`;
 
-    // Step 1: get matching posts (DISTINCT avoids duplicates from the review join)
     const posts = await sql`
       SELECT DISTINCT p.*,
         (SELECT COUNT(*)::int FROM reviews WHERE post_id = p.id) AS review_count,
@@ -27,7 +34,6 @@ export async function GET(req: NextRequest) {
 
     if (posts.length === 0) return NextResponse.json([]);
 
-    // Step 2: get all reviews whose content matches, then join in JS
     const matchingReviews = await sql`
       SELECT id, post_id, content, created_at
       FROM reviews
@@ -50,6 +56,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (e) {
     console.error('[GET /api/search]', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

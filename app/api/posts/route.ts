@@ -3,6 +3,16 @@ import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
 import { auth } from '@/auth';
 
+function isValidBlobUrl(url: unknown): boolean {
+  if (typeof url !== 'string' || url.length > 2048) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && u.hostname.endsWith('.public.blob.vercel-storage.com');
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     await ready;
@@ -24,7 +34,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(posts);
   } catch (e) {
     console.error('[GET /api/posts]', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
 
@@ -36,18 +46,28 @@ export async function POST(req: NextRequest) {
     await ready;
     const { title, performance_date, viewing_count, casting_board } = await req.json();
 
-    if (!title || !performance_date || !viewing_count) {
-      return NextResponse.json({ error: '필수 항목을 입력해주세요.' }, { status: 400 });
+    if (!title?.trim() || typeof title !== 'string' || title.length > 300) {
+      return NextResponse.json({ error: '제목을 확인해주세요. (최대 300자)' }, { status: 400 });
+    }
+    if (typeof performance_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(performance_date)) {
+      return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)' }, { status: 400 });
+    }
+    const count = Number(viewing_count);
+    if (!Number.isInteger(count) || count < 1 || count > 9999) {
+      return NextResponse.json({ error: '관람 횟수가 올바르지 않습니다. (1~9999)' }, { status: 400 });
+    }
+    if (casting_board != null && !isValidBlobUrl(casting_board)) {
+      return NextResponse.json({ error: '허용되지 않는 이미지 URL입니다.' }, { status: 400 });
     }
 
     const [post] = await sql`
       INSERT INTO posts (title, performance_date, viewing_count, casting_board)
-      VALUES (${title}, ${performance_date}, ${viewing_count}, ${casting_board ?? null})
+      VALUES (${title.trim()}, ${performance_date}, ${count}, ${casting_board ?? null})
       RETURNING *
     `;
     return NextResponse.json(post, { status: 201 });
   } catch (e) {
     console.error('[POST /api/posts]', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

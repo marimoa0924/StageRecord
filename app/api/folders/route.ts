@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 
@@ -35,7 +36,7 @@ export async function GET() {
 
     return NextResponse.json({ chikmuk_count: chikmuk.length, folders });
   } catch (e) {
-    console.error('[GET /api/folders]', e);
+    logger.error('[GET /api/folders]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

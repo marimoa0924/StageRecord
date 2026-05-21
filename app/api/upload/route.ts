@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { requireOwner } from '@/lib/requireOwner';
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     const { url } = await put(uniqueName, file, { access: 'public', token });
     return NextResponse.json({ url }, { status: 201 });
   } catch (e) {
-    console.error('[POST /api/upload]', e);
+    logger.error('[POST /api/upload]', e);
     return NextResponse.json({ error: '업로드 중 오류가 발생했습니다.' }, { status: 500 });
   }
 }

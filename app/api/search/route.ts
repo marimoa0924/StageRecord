@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { logger } from '@/lib/logger';
 
 const MAX_QUERY_LENGTH = 100;
+const RATE_LIMIT = { requests: 30, windowMs: 60_000 }; // 30 req/min per IP
 
 function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
@@ -9,6 +12,16 @@ function escapeLike(s: string): string {
 
 export async function GET(req: NextRequest) {
   try {
+    // Rate limit by client IP (set by Vercel edge — trustworthy server-side)
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+    const rl = checkRateLimit(`search:${ip}`, RATE_LIMIT.requests, RATE_LIMIT.windowMs);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
+      );
+    }
+
     await ready;
     const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
     if (!q) return NextResponse.json([]);
@@ -55,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (e) {
-    console.error('[GET /api/search]', e);
+    logger.error('GET /api/search', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

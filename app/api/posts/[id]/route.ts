@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
@@ -18,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     if (!post) return NextResponse.json({ error: '없는 게시물입니다.' }, { status: 404 });
     return NextResponse.json(post);
   } catch (e) {
-    console.error('[GET /api/posts/[id]]', e);
+    logger.error('[GET /api/posts/[id]]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
@@ -36,7 +37,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await sql`DELETE FROM posts WHERE id = ${id}`;
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('[DELETE /api/posts/[id]]', e);
+    logger.error('[DELETE /api/posts/[id]]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

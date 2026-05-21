@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
     `;
     return NextResponse.json(posts);
   } catch (e) {
-    console.error('[GET /api/posts]', e);
+    logger.error('[GET /api/posts]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     `;
     return NextResponse.json(post, { status: 201 });
   } catch (e) {
-    console.error('[POST /api/posts]', e);
+    logger.error('[POST /api/posts]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { auth } from '@/auth';
@@ -48,7 +49,7 @@ export async function GET(
 
     return NextResponse.json(posts);
   } catch (e) {
-    console.error('[GET /api/folders/[name]]', e);
+    logger.error('[GET /api/folders/[name]]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

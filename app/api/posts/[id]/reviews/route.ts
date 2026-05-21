@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     `;
     return NextResponse.json(reviews);
   } catch (e) {
-    console.error('[GET /api/posts/[id]/reviews]', e);
+    logger.error('[GET /api/posts/[id]/reviews]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     `;
     return NextResponse.json(review, { status: 201 });
   } catch (e) {
-    console.error('[POST /api/posts/[id]/reviews]', e);
+    logger.error('[POST /api/posts/[id]/reviews]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
@@ -84,7 +85,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await sql`DELETE FROM reviews WHERE id = ${reviewId} AND post_id = ${id}`;
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error('[DELETE /api/posts/[id]/reviews]', e);
+    logger.error('[DELETE /api/posts/[id]/reviews]', e);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

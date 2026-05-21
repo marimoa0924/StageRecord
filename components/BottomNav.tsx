@@ -67,7 +67,7 @@ export default function BottomNav({ onNewPost }: Props) {
           </button>
         ) : (
           <button
-            onClick={() => signIn('google')}
+            onClick={() => signIn('google', {}, { prompt: 'select_account' })}
             className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px] text-zinc-400 dark:text-zinc-500 hover:text-sky-500"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

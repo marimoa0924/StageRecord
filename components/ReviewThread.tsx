@@ -2,6 +2,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 
+function parseBulkThread(raw: string): string[] {
+  const lines = raw.split('\n');
+  const results: string[] = [];
+  let current: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    // Detect 4-line Twitter header: Name / @handle / · / date
+    const isHeader =
+      i + 3 < lines.length &&
+      lines[i].trim() !== '' &&
+      !lines[i].startsWith('@') &&
+      lines[i].trim() !== '·' &&
+      lines[i + 1].startsWith('@') &&
+      lines[i + 2].trim() === '·' &&
+      lines[i + 3].trim() !== '';
+
+    if (isHeader) {
+      const text = current.join('\n').trim();
+      if (text) results.push(text);
+      current = [];
+      i += 4;
+    } else {
+      current.push(lines[i]);
+      i++;
+    }
+  }
+
+  const text = current.join('\n').trim();
+  if (text) results.push(text);
+
+  return results;
+}
+
 interface Review {
   id: number;
   post_id: number;
@@ -100,6 +134,9 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -162,6 +199,23 @@ export default function ReviewThread({ postId, isOwner }: Props) {
     fetchReviews();
   }
 
+  async function handleBulkSubmit() {
+    const entries = parseBulkThread(bulkText);
+    if (!entries.length) return;
+    setBulkSubmitting(true);
+    for (const entry of entries) {
+      await fetch(`/api/posts/${postId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: entry, images: [] }),
+      });
+    }
+    setBulkText('');
+    setShowBulk(false);
+    setBulkSubmitting(false);
+    fetchReviews();
+  }
+
   const hasContent = content.trim().length > 0 || pendingImages.length > 0;
 
   return (
@@ -218,6 +272,65 @@ export default function ReviewThread({ postId, isOwner }: Props) {
         );
       })}
 
+      {showBulk && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm px-4 pb-6 sm:pb-0 sm:items-center">
+          <div className="w-full max-w-[598px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+              <h2 className="font-bold text-zinc-900 dark:text-white text-[15px]">스레드 일괄 입력</h2>
+              <button
+                onClick={() => { setShowBulk(false); setBulkText(''); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <p className="px-5 text-[13px] text-zinc-400 dark:text-zinc-500 mb-3">
+              트위터 스레드를 그대로 붙여넣으면 트윗별로 나눠서 등록해요.
+            </p>
+            <textarea
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder={'진진\n@jin0_ojin\n·\nNov 5, 2025\n후기 내용...'}
+              className="w-full px-5 py-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm resize-none outline-none h-44 border-t border-zinc-100 dark:border-zinc-800"
+            />
+            {bulkText.trim() && (() => {
+              const parsed = parseBulkThread(bulkText);
+              return parsed.length > 0 ? (
+                <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800">
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">{parsed.length}개 항목 인식됨</p>
+                  <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto">
+                    {parsed.map((e, i) => (
+                      <p key={i} className="text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 rounded-xl px-3 py-2 whitespace-pre-wrap line-clamp-2">
+                        {e}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 dark:text-zinc-500">
+                  헤더(이름 / @핸들 / · / 날짜)를 인식하지 못했어요. 트위터에서 복사한 텍스트를 그대로 붙여넣어보세요.
+                </p>
+              );
+            })()}
+            <div className="px-5 py-4 flex gap-3">
+              <button
+                onClick={() => { setShowBulk(false); setBulkText(''); }}
+                className="flex-1 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 font-medium text-[15px] transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleBulkSubmit}
+                disabled={bulkSubmitting || parseBulkThread(bulkText).length === 0}
+                className="flex-1 py-3 rounded-2xl bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold text-[15px] transition"
+              >
+                {bulkSubmitting ? '등록 중...' : `${parseBulkThread(bulkText).length}개 게시`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isOwner && (
         <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0">
           <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800/60">
@@ -253,6 +366,17 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 rows={1}
                 className="flex-1 min-w-0 bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
               />
+              <button
+                type="button"
+                onClick={() => setShowBulk(true)}
+                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
+                aria-label="일괄 입력"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              </button>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}

@@ -47,6 +47,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {showTutorial && user?.email && (
         <Tutorial
+          userName={user.name}
           userEmail={user.email}
           onDone={() => setShowTutorial(false)}
         />

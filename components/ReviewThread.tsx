@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import ImageLightbox from '@/components/ImageLightbox';
 
 function parseBulkThread(raw: string): string[] {
   const lines = raw.split('\n');
@@ -61,27 +62,48 @@ function parseImages(raw: string): string[] {
 }
 
 function ReviewImages({ images }: { images: string[] }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   if (images.length === 0) return null;
-  if (images.length === 1) {
-    return (
-      <div className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 aspect-video bg-zinc-50 dark:bg-zinc-950">
-        <Image src={images[0]} alt="" fill className="object-cover" />
-      </div>
-    );
-  }
+
   return (
-    <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
-      {images.slice(0, 4).map((url, i) => (
-        <div key={i} className="relative aspect-square bg-zinc-100 dark:bg-zinc-950">
-          <Image src={url} alt="" fill className="object-cover" />
-          {i === 3 && images.length > 4 && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
-              +{images.length - 4}
-            </div>
-          )}
+    <>
+      {images.length === 1 ? (
+        <button
+          type="button"
+          onClick={() => setLightboxIndex(0)}
+          className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 aspect-video bg-zinc-50 dark:bg-zinc-950 cursor-zoom-in block"
+        >
+          <Image src={images[0]} alt="" fill className="object-cover" />
+        </button>
+      ) : (
+        <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
+          {images.slice(0, 4).map((url, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setLightboxIndex(i)}
+              className="relative aspect-square bg-zinc-100 dark:bg-zinc-950 cursor-zoom-in"
+            >
+              <Image src={url} alt="" fill className="object-cover" />
+              {i === 3 && images.length > 4 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold pointer-events-none">
+                  +{images.length - 4}
+                </div>
+              )}
+            </button>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={images}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+    </>
   );
 }
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useSession, signIn } from 'next-auth/react';
+import ImageLightbox from '@/components/ImageLightbox';
 
 interface Post {
   id: number;
@@ -43,6 +44,7 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0);
   const [liking, setLiking] = useState(false);
   const [showLoginHint, setShowLoginHint] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
@@ -113,9 +115,21 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
           </div>
 
           {post.casting_board && (
-            <div className="mt-3 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-950" style={{ aspectRatio: '16/9' }}>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLightbox(true); }}
+              className="mt-3 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-950 cursor-zoom-in block"
+              style={{ aspectRatio: '16/9' }}
+            >
               <Image src={post.casting_board} alt="캐스팅보드" fill className="object-contain" />
-            </div>
+            </button>
+          )}
+
+          {showLightbox && post.casting_board && (
+            <ImageLightbox
+              images={[post.casting_board]}
+              onClose={() => setShowLightbox(false)}
+            />
           )}
 
           <div className="mt-3 flex items-center gap-5">

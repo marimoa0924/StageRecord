@@ -1,13 +1,25 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import CreatePostModal from '@/components/CreatePostModal';
+import Tutorial from '@/components/Tutorial';
+import { useOwner } from '@/lib/useOwner';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [showModal, setShowModal] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const router = useRouter();
+  const { isOwner, user, loading } = useOwner();
+
+  useEffect(() => {
+    if (loading || !user || isOwner) return;
+    try {
+      const key = `tutorial_done_${user.email}`;
+      if (!localStorage.getItem(key)) setShowTutorial(true);
+    } catch {}
+  }, [loading, user, isOwner]);
 
   function handleCreated() {
     setShowModal(false);
@@ -30,6 +42,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <CreatePostModal
           onClose={() => setShowModal(false)}
           onCreated={handleCreated}
+        />
+      )}
+
+      {showTutorial && user?.email && (
+        <Tutorial
+          userEmail={user.email}
+          onDone={() => setShowTutorial(false)}
         />
       )}
     </div>

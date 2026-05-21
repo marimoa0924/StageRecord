@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
+import { auth } from '@/auth';
 
 const CHIKMUK = '찍먹극';
-
-// Same extraction as /api/folders: strip date word, then strip " 자[Korean]..." ordinal suffix
-const SHOW_NAME = `TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))`;
 
 export async function GET(
   req: NextRequest,
@@ -15,8 +13,8 @@ export async function GET(
     const { name } = await params;
     const title = decodeURIComponent(name);
 
-    const vid = req.cookies.get('vid')?.value ??
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '0';
+    const session = await auth();
+    const likeId = session?.user?.email ?? '__no_match__';
 
     let posts;
     if (title === CHIKMUK) {
@@ -25,9 +23,9 @@ export async function GET(
           (SELECT COUNT(*)::int FROM reviews WHERE post_id = p.id) AS review_count,
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id) AS like_count,
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
-                                              AND visitor_id = ${vid}) AS liked_by_me
+                                              AND visitor_id = ${likeId}) AS liked_by_me
         FROM posts p
-        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) IN (
+        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', '')) IN (
           SELECT TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))
           FROM posts
           GROUP BY TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))
@@ -41,9 +39,9 @@ export async function GET(
           (SELECT COUNT(*)::int FROM reviews WHERE post_id = p.id) AS review_count,
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id) AS like_count,
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
-                                              AND visitor_id = ${vid}) AS liked_by_me
+                                              AND visitor_id = ${likeId}) AS liked_by_me
         FROM posts p
-        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' 자[가-힣]+.*$', '')) = ${title}
+        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', '')) = ${title}
         ORDER BY p.performance_date ASC
       `;
     }

@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useOwner } from '@/lib/useOwner';
 import { useTheme } from '@/lib/theme';
+import { signIn, signOut } from 'next-auth/react';
 
 interface Props {
   onNewPost: () => void;
@@ -10,7 +12,7 @@ interface Props {
 
 export default function BottomNav({ onNewPost }: Props) {
   const pathname = usePathname();
-  const { isOwner } = useOwner();
+  const { isOwner, user } = useOwner();
   const { theme, toggle } = useTheme();
 
   return (
@@ -29,7 +31,8 @@ export default function BottomNav({ onNewPost }: Props) {
           <span className="text-[10px] font-medium">홈</span>
         </Link>
 
-        {isOwner && (
+        {/* Owner: 기록 button / Non-owner: sign-in or profile */}
+        {isOwner ? (
           <button
             onClick={onNewPost}
             className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px] text-zinc-400 dark:text-zinc-500 hover:text-sky-500"
@@ -40,6 +43,38 @@ export default function BottomNav({ onNewPost }: Props) {
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
             <span className="text-[10px] font-medium">기록</span>
+          </button>
+        ) : user ? (
+          <button
+            onClick={() => signOut()}
+            className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px] text-zinc-400 dark:text-zinc-500 hover:text-red-400"
+            title={user.email ?? '로그아웃'}
+          >
+            {user.image ? (
+              <Image
+                src={user.image}
+                alt="profile"
+                width={24}
+                height={24}
+                className="w-6 h-6 rounded-full ring-1 ring-zinc-300 dark:ring-zinc-700"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-white text-[10px] font-bold">
+                {(user.name ?? user.email ?? '?')[0].toUpperCase()}
+              </div>
+            )}
+            <span className="text-[10px] font-medium">로그아웃</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => signIn('google')}
+            className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px] text-zinc-400 dark:text-zinc-500 hover:text-sky-500"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span className="text-[10px] font-medium">로그인</span>
           </button>
         )}
 
@@ -68,6 +103,7 @@ export default function BottomNav({ onNewPost }: Props) {
           )}
           <span className="text-[10px] font-medium">폴더</span>
         </Link>
+
         <Link
           href="/search"
           className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition min-h-[52px]

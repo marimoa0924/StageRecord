@@ -159,8 +159,31 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const [showBulk, setShowBulk] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Track visual viewport to detect soft keyboard and reposition compose bar
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isOwner) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    function update() {
+      const kh = Math.max(0, window.innerHeight - vv!.height - vv!.offsetTop);
+      setKeyboardHeight(kh);
+      const event = kh > 150 ? 'compose-keyboard-open' : 'compose-keyboard-close';
+      window.dispatchEvent(new CustomEvent(event));
+    }
+
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      window.dispatchEvent(new CustomEvent('compose-keyboard-close'));
+    };
+  }, [isOwner]);
 
   const fetchReviews = useCallback(async () => {
     const res = await fetch(`/api/posts/${postId}/reviews`);
@@ -354,7 +377,10 @@ export default function ReviewThread({ postId, isOwner }: Props) {
       )}
 
       {isOwner && (
-        <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0">
+        <div
+          className={`fixed left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0 transition-[bottom] duration-100 ${keyboardHeight > 150 ? '' : 'bottom-14'}`}
+          style={keyboardHeight > 150 ? { bottom: `${keyboardHeight}px` } : undefined}
+        >
           <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800/60">
             {pendingImages.length > 0 && (
               <div className="flex gap-2 px-4 pt-3 overflow-x-auto">

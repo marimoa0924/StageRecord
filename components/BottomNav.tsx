@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useOwner } from '@/lib/useOwner';
 import { useTheme } from '@/lib/theme';
@@ -14,6 +15,20 @@ export default function BottomNav({ onNewPost }: Props) {
   const pathname = usePathname();
   const { isOwner, user } = useOwner();
   const { theme, toggle } = useTheme();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    function onOpen() { setKeyboardOpen(true); }
+    function onClose() { setKeyboardOpen(false); }
+    window.addEventListener('compose-keyboard-open', onOpen);
+    window.addEventListener('compose-keyboard-close', onClose);
+    return () => {
+      window.removeEventListener('compose-keyboard-open', onOpen);
+      window.removeEventListener('compose-keyboard-close', onClose);
+    };
+  }, []);
+
+  if (keyboardOpen) return null;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex justify-center">

@@ -162,22 +162,10 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Hide BottomNav while soft keyboard is open
+  // Hide BottomNav while soft keyboard is open (works on both iOS and Android)
   useEffect(() => {
-    if (typeof window === 'undefined' || !isOwner) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    function update() {
-      const kh = Math.max(0, window.innerHeight - vv!.height - vv!.offsetTop);
-      window.dispatchEvent(new CustomEvent(kh > 150 ? 'compose-keyboard-open' : 'compose-keyboard-close'));
-    }
-
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
+    if (!isOwner) return;
     return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
       window.dispatchEvent(new CustomEvent('compose-keyboard-close'));
     };
   }, [isOwner]);
@@ -392,6 +380,8 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => { setContent(e.target.value); autoResize(); }}
+                onFocus={() => window.dispatchEvent(new CustomEvent('compose-keyboard-open'))}
+                onBlur={() => window.dispatchEvent(new CustomEvent('compose-keyboard-close'))}
                 enterKeyHint="enter"
                 placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
                 rows={2}

@@ -378,13 +378,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => { setContent(e.target.value); autoResize(); }}
-                onKeyDown={(e) => {
-                  // Ctrl/Cmd+Enter submits; plain Enter always inserts a newline
-                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    if (hasContent) handleSubmit(e as unknown as React.FormEvent);
-                  }
-                }}
+                enterKeyHint="enter"
                 placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
                 rows={1}
                 className="flex-1 min-w-0 bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
@@ -422,6 +416,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
               </button>
               <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
               <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={submitting || !hasContent}
                 className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-4 py-1.5 text-sm transition shrink-0"

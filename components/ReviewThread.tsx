@@ -379,7 +379,8 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                 value={content}
                 onChange={(e) => { setContent(e.target.value); autoResize(); }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  // Ctrl/Cmd+Enter submits; plain Enter always inserts a newline
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     if (hasContent) handleSubmit(e as unknown as React.FormEvent);
                   }

@@ -159,11 +159,10 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const [showBulk, setShowBulk] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Track visual viewport to detect soft keyboard and reposition compose bar
+  // Hide BottomNav while soft keyboard is open
   useEffect(() => {
     if (typeof window === 'undefined' || !isOwner) return;
     const vv = window.visualViewport;
@@ -171,9 +170,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
 
     function update() {
       const kh = Math.max(0, window.innerHeight - vv!.height - vv!.offsetTop);
-      setKeyboardHeight(kh);
-      const event = kh > 150 ? 'compose-keyboard-open' : 'compose-keyboard-close';
-      window.dispatchEvent(new CustomEvent(event));
+      window.dispatchEvent(new CustomEvent(kh > 150 ? 'compose-keyboard-open' : 'compose-keyboard-close'));
     }
 
     vv.addEventListener('resize', update);
@@ -218,8 +215,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
     if (fileRef.current) fileRef.current.value = '';
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     if (!content.trim() && pendingImages.length === 0) return;
     setSubmitting(true);
     await fetch(`/api/posts/${postId}/reviews`, {
@@ -264,7 +260,7 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const hasContent = content.trim().length > 0 || pendingImages.length > 0;
 
   return (
-    <div className={isOwner ? 'pb-36' : 'pb-4'}>
+    <div className={isOwner ? 'pb-24' : 'pb-4'}>
       {reviews.length === 0 && !isOwner && (
         <p className="text-zinc-400 dark:text-zinc-700 text-center py-10 text-sm">아직 후기가 없습니다.</p>
       )}
@@ -377,54 +373,57 @@ export default function ReviewThread({ postId, isOwner }: Props) {
       )}
 
       {isOwner && (
-        <div
-          className={`fixed left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0 transition-[bottom] duration-100 ${keyboardHeight > 150 ? '' : 'bottom-14'}`}
-          style={keyboardHeight > 150 ? { bottom: `${keyboardHeight}px` } : undefined}
-        >
-          <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800/60">
-            {pendingImages.length > 0 && (
-              <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
-                {pendingImages.map((url, i) => (
-                  <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                    <Image src={url} alt="" fill className="object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
-                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-white text-xs"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className="px-4">
+          {/* Thread connector from last review */}
+          <div className="flex gap-3">
+            <div className="w-10 flex justify-center">
+              <div className="w-0.5 h-3 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          </div>
 
-            <div className="flex items-center gap-3 px-4 py-2.5">
+          {/* Compose row — avatar + textarea */}
+          <div className="flex gap-3 pt-1">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white text-lg shrink-0 shadow-sm">
+              🎭
+            </div>
+
+            <div className="flex-1 min-w-0 pt-1.5">
               <textarea
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => { setContent(e.target.value); autoResize(); }}
                 enterKeyHint="enter"
                 placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
-                rows={1}
-                className="flex-1 min-w-0 bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
+                rows={2}
+                className="w-full bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-relaxed text-[17px]"
               />
-              <button
-                type="button"
-                onClick={() => setShowBulk(true)}
-                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
-                aria-label="일괄 입력"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                </svg>
-              </button>
+
+              {pendingImages.length > 0 && (
+                <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                  {pendingImages.map((url, i) => (
+                    <div key={i} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                      <Image src={url} alt="" fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-white text-xs"
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action bar — media buttons left, 게시 button right */}
+          <div className="flex gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-900">
+            <div className="w-10 shrink-0" />
+            <div className="flex items-center flex-1 gap-0.5">
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
+                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition"
                 aria-label="사진 첨부"
               >
                 {uploading ? (
@@ -440,18 +439,33 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                   </svg>
                 )}
               </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
+
+              <button
+                type="button"
+                onClick={() => setShowBulk(true)}
+                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition"
+                aria-label="일괄 입력"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              </button>
+
+              <div className="flex-1" />
+
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting || !hasContent}
-                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-4 py-1.5 text-sm transition shrink-0"
+                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-5 py-2 text-[15px] transition"
               >
                 {submitting ? '...' : '게시'}
               </button>
             </div>
-            <div className="pb-safe" />
           </div>
+
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
         </div>
       )}
     </div>

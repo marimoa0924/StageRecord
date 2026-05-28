@@ -302,8 +302,8 @@ export default function ReviewThread({ postId, isOwner }: Props) {
       })}
 
       {showBulk && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm px-4 pb-6 sm:pb-0 sm:items-center">
-          <div className="w-full max-w-[598px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm px-4 pt-10 sm:pt-0 sm:items-center">
+          <div className="w-full max-w-[598px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-y-auto max-h-[80dvh]">
             <div className="flex items-center justify-between px-5 pt-5 pb-2">
               <h2 className="font-bold text-zinc-900 dark:text-white text-[15px]">스레드 일괄 입력</h2>
               <button

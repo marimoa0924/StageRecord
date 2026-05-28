@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { signIn, signOut } from 'next-auth/react';
 import PostCard from '@/components/PostCard';
 import { useOwner } from '@/lib/useOwner';
@@ -21,6 +21,9 @@ export default function Home() {
   const { isOwner, user, loading: authLoading } = useOwner();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0); // 0→1 while pulling
+  const rafId = useRef<number>(0);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -35,6 +38,54 @@ export default function Home() {
   }, []);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  // Pull-to-refresh: track touch drag from the top of the page
+  useEffect(() => {
+    const THRESHOLD = 72; // px of pull needed to trigger refresh
+    let pulling = false;
+    let startY = 0;
+    let lastDy = 0;
+
+    function onTouchStart(e: TouchEvent) {
+      if (window.scrollY > 0) return;
+      startY = e.touches[0].clientY;
+      pulling = true;
+      lastDy = 0;
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!pulling) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { lastDy = 0; setPullProgress(0); return; }
+      lastDy = dy;
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        setPullProgress(Math.min(dy / THRESHOLD, 1.4));
+      });
+    }
+
+    function onTouchEnd() {
+      if (!pulling) return;
+      pulling = false;
+      const dy = lastDy;
+      lastDy = 0;
+      setPullProgress(0);
+      if (dy >= THRESHOLD) {
+        setRefreshing(true);
+        fetchPosts().finally(() => setRefreshing(false));
+      }
+    }
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      cancelAnimationFrame(rafId.current);
+    };
+  }, [fetchPosts]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -64,6 +115,23 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
+        {/* Pull-to-refresh indicator */}
+        <div
+          className="flex justify-center items-center overflow-hidden transition-[height] duration-150"
+          style={{ height: refreshing ? 48 : `${Math.min(pullProgress, 1) * 48}px` }}
+        >
+          <svg
+            className={`w-5 h-5 transition-colors duration-150 ${pullProgress >= 1 || refreshing ? 'text-sky-500' : 'text-zinc-300 dark:text-zinc-700'} ${refreshing ? 'animate-spin' : ''}`}
+            style={refreshing ? undefined : { transform: `rotate(${Math.min(pullProgress, 1) * 360}deg)` }}
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          >
+            {refreshing
+              ? <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              : <><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>
+            }
+          </svg>
+        </div>
+
         {loading && (
           <div className="flex flex-col gap-0">
             {[...Array(4)].map((_, i) => (

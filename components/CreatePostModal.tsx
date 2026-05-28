@@ -102,33 +102,33 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
               />
             </div>
 
-            {/* Date + Viewing count */}
-            <div className="flex gap-3">
-              <div className="flex-1 min-w-0">
-                <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 날짜 *</label>
-                <input
-                  type="date"
-                  className="w-full h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 text-zinc-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-500 transition"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="shrink-0 w-[116px]">
-                <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 횟수</label>
-                <div className="flex items-center h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden focus-within:border-sky-500 transition">
-                  <button
-                    type="button"
-                    onClick={() => setViewingCount((v) => Math.max(1, v - 1))}
-                    className="w-10 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
-                  >−</button>
-                  <span className="flex-1 text-center text-zinc-900 dark:text-white font-medium">{viewingCount}</span>
-                  <button
-                    type="button"
-                    onClick={() => setViewingCount((v) => v + 1)}
-                    className="w-10 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
-                  >+</button>
-                </div>
+            {/* Date — full width */}
+            <div>
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 날짜 *</label>
+              <input
+                type="date"
+                className="w-full h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 text-zinc-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-500 transition"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Viewing count — label left, stepper right */}
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium uppercase tracking-wide shrink-0">관람 횟수</label>
+              <div className="flex items-center h-[42px] w-[148px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden focus-within:border-sky-500 transition shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewingCount((v) => Math.max(1, v - 1))}
+                  className="w-11 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
+                >−</button>
+                <span className="flex-1 text-center text-zinc-900 dark:text-white font-medium">{viewingCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setViewingCount((v) => v + 1)}
+                  className="w-11 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
+                >+</button>
               </div>
             </div>
 

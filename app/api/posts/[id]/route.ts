@@ -24,6 +24,41 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const check = await requireOwner();
+    if ('error' in check) return check.error;
+
+    await ready;
+    const { id: raw } = await params;
+    const id = parseId(raw);
+    if (!id) return NextResponse.json({ error: '유효하지 않은 게시물 ID입니다.' }, { status: 400 });
+
+    const body = await req.json();
+    const { performance_date, viewing_count } = body;
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(performance_date))) {
+      return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다.' }, { status: 400 });
+    }
+    const vc = Number(viewing_count);
+    if (!Number.isInteger(vc) || vc < 1 || vc > 9999) {
+      return NextResponse.json({ error: '관람 횟수는 1~9999 사이의 정수여야 합니다.' }, { status: 400 });
+    }
+
+    const [updated] = await sql`
+      UPDATE posts
+      SET performance_date = ${performance_date}, viewing_count = ${vc}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!updated) return NextResponse.json({ error: '없는 게시물입니다.' }, { status: 404 });
+    return NextResponse.json(updated);
+  } catch (e) {
+    logger.error('[PATCH /api/posts/[id]]', e);
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+  }
+}
+
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const check = await requireOwner();

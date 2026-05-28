@@ -27,12 +27,113 @@ function formatCreatedAt(iso: string) {
   });
 }
 
+// ─── Edit modal ──────────────────────────────────────────────────────────────
+
+function EditModal({
+  post,
+  onClose,
+  onSaved,
+}: {
+  post: Post;
+  onClose: () => void;
+  onSaved: (updated: Post) => void;
+}) {
+  const [date, setDate] = useState(post.performance_date.slice(0, 10));
+  const [viewingCount, setViewingCount] = useState(post.viewing_count);
+  const [saving, setSaving] = useState(false);
+
+  const changed =
+    date !== post.performance_date.slice(0, 10) ||
+    viewingCount !== post.viewing_count;
+
+  async function save() {
+    if (!date || !changed) return;
+    setSaving(true);
+    const res = await fetch(`/api/posts/${post.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ performance_date: date, viewing_count: viewingCount }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      onSaved(updated);
+    }
+    setSaving(false);
+  }
+
+  return (
+    /* Mobile: full-screen  /  Desktop: centered dialog */
+    <div
+      className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:bg-black/60 sm:backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="flex flex-col w-full h-full sm:h-auto sm:max-w-sm sm:rounded-2xl sm:shadow-2xl sm:border sm:border-zinc-200 dark:sm:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between px-5 h-14 border-b border-zinc-200 dark:border-zinc-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-start text-[15px]"
+          >
+            취소
+          </button>
+          <h2 className="text-zinc-900 dark:text-white font-bold text-[16px]">정보 수정</h2>
+          <button
+            type="button"
+            onClick={save}
+            disabled={!changed || !date || saving}
+            className="text-sky-500 font-bold text-[15px] disabled:opacity-40 min-h-[44px] px-1 transition hover:text-sky-400"
+          >
+            {saving ? '저장 중…' : '저장'}
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-5">
+          <div>
+            <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 날짜</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 text-zinc-900 dark:text-white focus:outline-none focus:border-sky-500 dark:focus:border-sky-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 횟수</label>
+            <div className="flex items-center h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden focus-within:border-sky-500 transition">
+              <button
+                type="button"
+                onClick={() => setViewingCount((v) => Math.max(1, v - 1))}
+                className="w-14 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
+              >−</button>
+              <span className="flex-1 text-center text-zinc-900 dark:text-white font-semibold text-lg">{viewingCount}</span>
+              <button
+                type="button"
+                onClick={() => setViewingCount((v) => Math.min(9999, v + 1))}
+                className="w-14 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
+              >+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function PostPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { isOwner } = useOwner();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState(false);
 
   const fetchPost = useCallback(async () => {
     const res = await fetch(`/api/posts/${id}`);
@@ -98,12 +199,20 @@ export default function PostPage() {
             <span className="text-zinc-300 dark:text-zinc-700 text-[13px]">·</span>
             <span className="text-zinc-400 dark:text-zinc-500 text-[13px]">{formatCreatedAt(post.created_at)}</span>
             {isOwner && (
-              <button
-                onClick={handleDelete}
-                className="ml-auto text-zinc-400 dark:text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
-              >
-                삭제
-              </button>
+              <div className="ml-auto flex items-center gap-0.5">
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="text-zinc-400 dark:text-zinc-700 hover:text-sky-500 text-xs transition min-h-[44px] flex items-center px-2"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-zinc-400 dark:text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center px-2"
+                >
+                  삭제
+                </button>
+              </div>
             )}
           </div>
 
@@ -129,6 +238,14 @@ export default function PostPage() {
       </article>
 
       <ReviewThread postId={post.id} isOwner={isOwner} />
+
+      {showEdit && (
+        <EditModal
+          post={post}
+          onClose={() => setShowEdit(false)}
+          onSaved={(updated) => { setPost(updated); setShowEdit(false); }}
+        />
+      )}
     </div>
   );
 }

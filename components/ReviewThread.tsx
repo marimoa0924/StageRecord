@@ -302,59 +302,59 @@ export default function ReviewThread({ postId, isOwner }: Props) {
       })}
 
       {showBulk && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm px-4 pt-10 sm:pt-0 sm:items-center">
-          <div className="w-full max-w-[598px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-y-auto max-h-[80dvh]">
-            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+        /* Mobile: full-screen so keyboard never hides content
+           Desktop sm+: centered dialog with backdrop */
+        <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:bg-black/70 sm:backdrop-blur-sm">
+          <div className="flex flex-col w-full h-full sm:h-auto sm:max-w-[598px] sm:max-h-[85dvh] sm:rounded-3xl bg-white dark:bg-zinc-950 overflow-hidden sm:shadow-2xl">
+
+            {/* Header */}
+            <div className="shrink-0 flex items-center justify-between px-5 h-14 border-b border-zinc-100 dark:border-zinc-800">
+              <button
+                onClick={() => { setShowBulk(false); setBulkText(''); }}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-start text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
               <h2 className="font-bold text-zinc-900 dark:text-white text-[15px]">스레드 일괄 입력</h2>
-              <button
-                onClick={() => { setShowBulk(false); setBulkText(''); }}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <p className="px-5 text-[13px] text-zinc-400 dark:text-zinc-500 mb-3">
-              트위터 스레드를 그대로 붙여넣으면 트윗별로 나눠서 등록해요.
-            </p>
-            <textarea
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              placeholder={'진진\n@jin0_ojin\n·\nNov 5, 2025\n후기 내용...'}
-              className="w-full px-5 py-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white text-sm resize-none outline-none h-44 border-t border-zinc-100 dark:border-zinc-800"
-            />
-            {bulkText.trim() && (() => {
-              const parsed = parseBulkThread(bulkText);
-              return parsed.length > 0 ? (
-                <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">{parsed.length}개 항목 인식됨</p>
-                  <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto">
-                    {parsed.map((e, i) => (
-                      <p key={i} className="text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 rounded-xl px-3 py-2 whitespace-pre-wrap line-clamp-2">
-                        {e}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 dark:text-zinc-500">
-                  헤더(이름 / @핸들 / · / 날짜)를 인식하지 못했어요. 트위터에서 복사한 텍스트를 그대로 붙여넣어보세요.
-                </p>
-              );
-            })()}
-            <div className="px-5 py-4 flex gap-3">
-              <button
-                onClick={() => { setShowBulk(false); setBulkText(''); }}
-                className="flex-1 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 font-medium text-[15px] transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
-              >
-                취소
-              </button>
               <button
                 onClick={handleBulkSubmit}
                 disabled={bulkSubmitting || parseBulkThread(bulkText).length === 0}
-                className="flex-1 py-3 rounded-2xl bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold text-[15px] transition"
+                className="text-sky-500 font-bold text-[15px] disabled:opacity-40 min-h-[44px] px-1 transition hover:text-sky-400"
               >
-                {bulkSubmitting ? '등록 중...' : `${parseBulkThread(bulkText).length}개 게시`}
+                {bulkSubmitting ? '...' : `${parseBulkThread(bulkText).length || ''}게시`}
               </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              <p className="px-5 pt-4 pb-2 text-[13px] text-zinc-400 dark:text-zinc-500">
+                트위터 스레드를 그대로 붙여넣으면 트윗별로 나눠서 등록해요.
+              </p>
+              <textarea
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder={'진진\n@jin0_ojin\n·\nNov 5, 2025\n후기 내용...'}
+                className="flex-1 w-full px-5 py-3 bg-transparent text-zinc-900 dark:text-white text-sm resize-none outline-none min-h-[160px] border-t border-zinc-100 dark:border-zinc-800"
+              />
+              {bulkText.trim() && (() => {
+                const parsed = parseBulkThread(bulkText);
+                return parsed.length > 0 ? (
+                  <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">{parsed.length}개 항목 인식됨</p>
+                    <div className="flex flex-col gap-1.5">
+                      {parsed.map((e, i) => (
+                        <p key={i} className="text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 rounded-xl px-3 py-2 whitespace-pre-wrap line-clamp-2">
+                          {e}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
+                    헤더(이름 / @핸들 / · / 날짜)를 인식하지 못했어요. 트위터에서 복사한 텍스트를 그대로 붙여넣어보세요.
+                  </p>
+                );
+              })()}
             </div>
           </div>
         </div>

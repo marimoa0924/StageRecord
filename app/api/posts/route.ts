@@ -20,18 +20,35 @@ export async function GET(req: NextRequest) {
     const session = await auth();
     const likeId = session?.user?.email ?? '__no_match__';
 
-    const posts = await sql`
-      SELECT
-        p.*,
-        COUNT(DISTINCT r.id)::int   AS review_count,
-        COUNT(DISTINCT l.id)::int   AS like_count,
-        MAX(CASE WHEN l.visitor_id = ${likeId} THEN 1 ELSE 0 END) AS liked_by_me
-      FROM posts p
-      LEFT JOIN reviews r ON r.post_id = p.id
-      LEFT JOIN likes   l ON l.post_id = p.id
-      GROUP BY p.id
-      ORDER BY p.created_at DESC
-    `;
+    const sortParam = req.nextUrl.searchParams.get('sort');
+    const byDate = sortParam === 'date';
+
+    const posts = byDate
+      ? await sql`
+          SELECT
+            p.*,
+            COUNT(DISTINCT r.id)::int   AS review_count,
+            COUNT(DISTINCT l.id)::int   AS like_count,
+            MAX(CASE WHEN l.visitor_id = ${likeId} THEN 1 ELSE 0 END) AS liked_by_me
+          FROM posts p
+          LEFT JOIN reviews r ON r.post_id = p.id
+          LEFT JOIN likes   l ON l.post_id = p.id
+          GROUP BY p.id
+          ORDER BY p.performance_date DESC, p.created_at DESC
+        `
+      : await sql`
+          SELECT
+            p.*,
+            COUNT(DISTINCT r.id)::int   AS review_count,
+            COUNT(DISTINCT l.id)::int   AS like_count,
+            MAX(CASE WHEN l.visitor_id = ${likeId} THEN 1 ELSE 0 END) AS liked_by_me
+          FROM posts p
+          LEFT JOIN reviews r ON r.post_id = p.id
+          LEFT JOIN likes   l ON l.post_id = p.id
+          GROUP BY p.id
+          ORDER BY p.created_at DESC
+        `;
+
     return NextResponse.json(posts);
   } catch (e) {
     logger.error('[GET /api/posts]', e);

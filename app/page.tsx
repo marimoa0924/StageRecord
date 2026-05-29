@@ -21,13 +21,14 @@ export default function Home() {
   const { isOwner, user, loading: authLoading } = useOwner();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<'upload' | 'date'>('upload');
   const [refreshing, setRefreshing] = useState(false);
   const [pullProgress, setPullProgress] = useState(0); // 0→1 while pulling
   const rafId = useRef<number>(0);
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (currentSort = sort) => {
     try {
-      const res = await fetch('/api/posts');
+      const res = await fetch(`/api/posts${currentSort === 'date' ? '?sort=date' : ''}`);
       const data = await res.json();
       setPosts(Array.isArray(data) ? data : []);
     } catch {
@@ -35,9 +36,9 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sort]);
 
-  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => { fetchPosts(sort); }, [fetchPosts, sort]);
 
   // Pull-to-refresh: track touch drag from the top of the page
   useEffect(() => {
@@ -113,6 +114,30 @@ export default function Home() {
           )}
         </div>
       </header>
+
+      {/* Sort tabs */}
+      <div className="flex border-b border-zinc-200/80 dark:border-zinc-800/60">
+        {(['upload', 'date'] as const).map((key) => {
+          const label = key === 'upload' ? '업로드순' : '관람일순';
+          const active = sort === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setSort(key)}
+              className={`flex-1 py-2.5 text-sm font-medium transition relative ${
+                active
+                  ? 'text-zinc-900 dark:text-white'
+                  : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
+              }`}
+            >
+              {label}
+              {active && (
+                <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-sky-500 rounded-full" />
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       <main className="flex-1">
         {/* Pull-to-refresh indicator */}

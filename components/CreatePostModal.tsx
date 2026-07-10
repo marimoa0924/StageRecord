@@ -21,16 +21,21 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const fd = new FormData();
-    fd.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
-    const data = await res.json();
-    if (data.url) {
-      setImageUrl(data.url);
-    } else {
-      alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.url) {
+        setImageUrl(data.url);
+      } else {
+        alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+      }
+    } catch {
+      alert('업로드 중 오류가 발생했습니다. 파일 크기(10MB 이하)를 확인하고 다시 시도해주세요.');
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   }
 
   async function submit() {

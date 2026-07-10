@@ -190,17 +190,22 @@ export default function ReviewThread({ postId, isOwner }: Props) {
     if (!files.length) return;
     setUploading(true);
     const urls: string[] = [];
-    for (const file of files) {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.url) urls.push(data.url);
-      else alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.url) urls.push(data.url);
+        else alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+      }
+    } catch {
+      alert('업로드 중 오류가 발생했습니다. 파일 크기(10MB 이하)를 확인하고 다시 시도해주세요.');
+    } finally {
+      setPendingImages((prev) => [...prev, ...urls]);
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
-    setPendingImages((prev) => [...prev, ...urls]);
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = '';
   }
 
   async function handleSubmit() {

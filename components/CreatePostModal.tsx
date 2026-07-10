@@ -12,6 +12,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
   const [date, setDate] = useState('');
   const [viewingCount, setViewingCount] = useState(1);
   const [imageUrl, setImageUrl] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -43,6 +44,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
         performance_date: date,
         viewing_count: viewingCount,
         casting_board: imageUrl || null,
+        is_private: isPrivate,
       }),
     });
     setSubmitting(false);
@@ -157,6 +159,22 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
                 )}
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </div>
+
+            {/* Privacy toggle */}
+            <div className="flex items-center justify-between gap-4 py-1">
+              <div>
+                <p className="text-zinc-700 dark:text-zinc-300 text-[15px] font-medium">비공개</p>
+                <p className="text-zinc-400 dark:text-zinc-500 text-xs mt-0.5">비공개 시 후기가 다른 사람에게 숨겨집니다</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPrivate((v) => !v)}
+                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isPrivate ? 'bg-zinc-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                aria-pressed={isPrivate}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isPrivate ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
             </div>
           </form>
         </div>

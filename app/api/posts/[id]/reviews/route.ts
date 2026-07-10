@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
+import { auth, isOwner } from '@/auth';
 
 const ALLOWED_IMG_RE = /^https:\/\/[^/]+\.(?:public\.blob\.vercel-storage\.com|googleusercontent\.com)\//;
 const MAX_CONTENT_LENGTH = 5000;
@@ -16,6 +17,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     await ready;
     const { id } = await params;
     const vid = req.cookies.get('vid')?.value ?? '0';
+
+    const [post] = await sql`SELECT is_private FROM posts WHERE id = ${id}`;
+    if (post?.is_private) {
+      const session = await auth();
+      if (!isOwner(session?.user?.email)) {
+        return NextResponse.json([]);
+      }
+    }
 
     const reviews = await sql`
       SELECT

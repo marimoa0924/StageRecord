@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     if ('error' in check) return check.error;
 
     await ready;
-    const { title, performance_date, viewing_count, casting_board } = await req.json();
+    const { title, performance_date, viewing_count, casting_board, is_private } = await req.json();
 
     if (!title?.trim() || typeof title !== 'string' || title.length > 300) {
       return NextResponse.json({ error: '제목을 확인해주세요. (최대 300자)' }, { status: 400 });
@@ -77,10 +77,11 @@ export async function POST(req: NextRequest) {
     if (casting_board != null && !isValidBlobUrl(casting_board)) {
       return NextResponse.json({ error: '허용되지 않는 이미지 URL입니다.' }, { status: 400 });
     }
+    const privateFlag = is_private === true;
 
     const [post] = await sql`
-      INSERT INTO posts (title, performance_date, viewing_count, casting_board)
-      VALUES (${title.trim()}, ${performance_date}, ${count}, ${casting_board ?? null})
+      INSERT INTO posts (title, performance_date, viewing_count, casting_board, is_private)
+      VALUES (${title.trim()}, ${performance_date}, ${count}, ${casting_board ?? null}, ${privateFlag})
       RETURNING *
     `;
     return NextResponse.json(post, { status: 201 });

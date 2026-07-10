@@ -12,6 +12,7 @@ interface Post {
   viewing_count: number;
   casting_board: string | null;
   created_at: string;
+  is_private?: boolean;
   review_count?: number;
   like_count?: number;
   liked_by_me?: number;
@@ -101,7 +102,14 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
             )}
           </div>
 
-          <p className="text-zinc-800 dark:text-[#e7e9ea] font-semibold text-[15px] leading-snug mt-0.5">{post.title}</p>
+          <p className="text-zinc-800 dark:text-[#e7e9ea] font-semibold text-[15px] leading-snug mt-0.5 flex items-center gap-1.5">
+            {post.title}
+            {post.is_private && (
+              <svg className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            )}
+          </p>
 
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 text-xs rounded-full px-2.5 py-1 border border-zinc-200/80 dark:border-zinc-800/60">

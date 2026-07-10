@@ -11,6 +11,7 @@ interface Post {
   performance_date: string;
   viewing_count: number;
   casting_board: string | null;
+  is_private: boolean;
   created_at: string;
 }
 
@@ -40,11 +41,13 @@ function EditModal({
 }) {
   const [date, setDate] = useState(post.performance_date.slice(0, 10));
   const [viewingCount, setViewingCount] = useState(post.viewing_count);
+  const [isPrivate, setIsPrivate] = useState(post.is_private);
   const [saving, setSaving] = useState(false);
 
   const changed =
     date !== post.performance_date.slice(0, 10) ||
-    viewingCount !== post.viewing_count;
+    viewingCount !== post.viewing_count ||
+    isPrivate !== post.is_private;
 
   async function save() {
     if (!date || !changed) return;
@@ -52,7 +55,7 @@ function EditModal({
     const res = await fetch(`/api/posts/${post.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ performance_date: date, viewing_count: viewingCount }),
+      body: JSON.stringify({ performance_date: date, viewing_count: viewingCount, is_private: isPrivate }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -118,6 +121,21 @@ function EditModal({
                 className="w-14 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
               >+</button>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 py-1">
+            <div>
+              <p className="text-zinc-700 dark:text-zinc-300 text-[15px] font-medium">비공개</p>
+              <p className="text-zinc-400 dark:text-zinc-500 text-xs mt-0.5">비공개 시 후기가 다른 사람에게 숨겨집니다</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPrivate((v) => !v)}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isPrivate ? 'bg-zinc-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+              aria-pressed={isPrivate}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isPrivate ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
           </div>
         </div>
       </div>
@@ -237,7 +255,16 @@ export default function PostPage() {
         </div>
       </article>
 
-      <ReviewThread postId={post.id} isOwner={isOwner} />
+      {post.is_private && !isOwner ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-zinc-400 dark:text-zinc-500">
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <p className="text-sm">비공개 게시물입니다</p>
+        </div>
+      ) : (
+        <ReviewThread postId={post.id} isOwner={isOwner} />
+      )}
 
       {showEdit && (
         <EditModal

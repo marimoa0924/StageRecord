@@ -55,6 +55,18 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(review_id, visitor_id)
         )
       `;
+      // Add is_private column if it doesn't exist
+      await sql`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'posts' AND column_name = 'is_private'
+          ) THEN
+            ALTER TABLE posts ADD COLUMN is_private BOOLEAN NOT NULL DEFAULT FALSE;
+          END IF;
+        END $$
+      `;
       // One-time title renames (idempotent: skip if 3rd word already matches)
       await sql`UPDATE posts SET title = replace(title, ' 수영장의 ', ' 수영장의 사과 ') WHERE split_part(title,' ',2)='수영장의' AND split_part(title,' ',3)!='사과'`;
       await sql`UPDATE posts SET title = replace(title, ' 올랜도 ', ' 올랜도 인 버지니아 ') WHERE split_part(title,' ',2)='올랜도' AND split_part(title,' ',3)!='인'`;

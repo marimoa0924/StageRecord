@@ -35,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!id) return NextResponse.json({ error: '유효하지 않은 게시물 ID입니다.' }, { status: 400 });
 
     const body = await req.json();
-    const { performance_date, viewing_count } = body;
+    const { performance_date, viewing_count, is_private } = body;
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(performance_date))) {
       return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다.' }, { status: 400 });
@@ -44,13 +44,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!Number.isInteger(vc) || vc < 1 || vc > 9999) {
       return NextResponse.json({ error: '관람 횟수는 1~9999 사이의 정수여야 합니다.' }, { status: 400 });
     }
+    const privateFlag = typeof is_private === 'boolean' ? is_private : undefined;
 
-    const [updated] = await sql`
-      UPDATE posts
-      SET performance_date = ${performance_date}, viewing_count = ${vc}
-      WHERE id = ${id}
-      RETURNING *
-    `;
+    const [updated] = privateFlag !== undefined
+      ? await sql`
+          UPDATE posts
+          SET performance_date = ${performance_date}, viewing_count = ${vc}, is_private = ${privateFlag}
+          WHERE id = ${id}
+          RETURNING *
+        `
+      : await sql`
+          UPDATE posts
+          SET performance_date = ${performance_date}, viewing_count = ${vc}
+          WHERE id = ${id}
+          RETURNING *
+        `;
     if (!updated) return NextResponse.json({ error: '없는 게시물입니다.' }, { status: 404 });
     return NextResponse.json(updated);
   } catch (e) {

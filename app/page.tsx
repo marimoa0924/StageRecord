@@ -11,6 +11,7 @@ interface Post {
   performance_date: string;
   viewing_count: number;
   casting_board: string | null;
+  is_private: boolean;
   created_at: string;
   review_count: number;
   like_count: number;

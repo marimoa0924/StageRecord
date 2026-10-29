@@ -8,7 +8,7 @@
 }
 
 html {
-  /* scroll-behavior: smooth 제거 — 뒤로가기 스크롤 복원이 애니메이션과 경쟁해 맨 위로 튀던 문제 */
+  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 

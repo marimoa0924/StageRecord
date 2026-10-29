@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { signIn, signOut } from 'next-auth/react';
 import PostCard from '@/components/PostCard';
 import { useOwner } from '@/lib/useOwner';
-import { restoreScroll } from '@/lib/scrollRestore';
 import Image from 'next/image';
 
 interface Post {
@@ -18,16 +17,11 @@ interface Post {
   liked_by_me: number;
 }
 
-// 스레드 → 뒤로가기 시 목록·스크롤을 유지하기 위한 세션 캐시 (새로고침하면 초기화됨)
-let cachedPosts: Post[] | null = null;
-let cachedSort: 'upload' | 'date' = 'date';
-let cachedScroll = 0;
-
 export default function Home() {
   const { isOwner, user, loading: authLoading } = useOwner();
-  const [posts, setPosts] = useState<Post[]>(cachedPosts ?? []);
-  const [loading, setLoading] = useState(cachedPosts === null);
-  const [sort, setSort] = useState<'upload' | 'date'>(cachedSort);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<'upload' | 'date'>('date');
   const [refreshing, setRefreshing] = useState(false);
   const [pullProgress, setPullProgress] = useState(0); // 0→1 while pulling
   const rafId = useRef<number>(0);
@@ -36,10 +30,7 @@ export default function Home() {
     try {
       const res = await fetch(`/api/posts${currentSort === 'date' ? '?sort=date' : ''}`);
       const data = await res.json();
-      const list = Array.isArray(data) ? data : [];
-      setPosts(list);
-      cachedPosts = list;
-      cachedSort = currentSort;
+      setPosts(Array.isArray(data) ? data : []);
     } catch {
       setPosts([]);
     } finally {
@@ -48,14 +39,6 @@ export default function Home() {
   }, [sort]);
 
   useEffect(() => { fetchPosts(sort); }, [fetchPosts, sort]);
-
-  // 뒤로가기 복원: 캐시된 목록이 즉시 렌더되어 높이가 유지됨 → 저장한 위치로 복원
-  useEffect(() => {
-    if (cachedPosts !== null) restoreScroll(cachedScroll);
-    const onScroll = () => { cachedScroll = window.scrollY; };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   // Pull-to-refresh: track touch drag from the top of the page
   useEffect(() => {

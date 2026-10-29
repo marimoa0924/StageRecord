@@ -4,7 +4,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useOwner } from '@/lib/useOwner';
-import { restoreScroll } from '@/lib/scrollRestore';
 
 interface MatchingReview {
   id: number;
@@ -151,9 +150,8 @@ function SearchResultCard({ post, query }: { post: SearchPost; query: string }) 
   );
 }
 
-// 스레드 → 뒤로가기 시 검색 결과·스크롤을 유지하기 위한 세션 캐시 (새로고침하면 초기화됨)
+// 스레드 → 뒤로가기 시 검색 결과를 유지하기 위한 세션 캐시 (새로고침하면 초기화됨)
 let searchCache: { q: string; results: SearchPost[] } | null = null;
-let searchScroll = 0;
 
 function SearchContent() {
   const router = useRouter();
@@ -197,15 +195,6 @@ function SearchContent() {
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
-
-  // 뒤로가기 복원: 캐시된 결과가 즉시 렌더됨 → 저장한 위치로 복원
-  useEffect(() => {
-    if (results.length > 0) restoreScroll(searchScroll);
-    const onScroll = () => { searchScroll = window.scrollY; };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">

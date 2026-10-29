@@ -16,7 +16,7 @@ export default function Sidebar({ onNewPost }: Props) {
   const { theme, toggle } = useTheme();
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[240px] xl:w-[260px] px-2 pt-1 pb-4 z-50 border-r border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-black">
+    <aside className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen w-[240px] xl:w-[260px] px-2 pt-1 pb-4 z-30 border-r border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-black">
       <Link
         href="/"
         className="flex items-center gap-3 px-3 py-4 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-900/60 transition w-fit mb-1"

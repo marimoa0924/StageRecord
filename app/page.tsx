@@ -22,7 +22,9 @@ export default function Home() {
   const { isOwner, user, loading: authLoading } = useOwner();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<'upload' | 'date'>('upload');
+  const [sort, setSort] = useState<'upload' | 'date'>(() => {
+    try { return (sessionStorage.getItem('homeSort') as 'upload' | 'date') || 'upload'; } catch { return 'upload'; }
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [pullProgress, setPullProgress] = useState(0); // 0→1 while pulling
   const rafId = useRef<number>(0);
@@ -40,6 +42,18 @@ export default function Home() {
   }, [sort]);
 
   useEffect(() => { fetchPosts(sort); }, [fetchPosts, sort]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem('homeSort', sort); } catch {}
+  }, [sort]);
+
+  useEffect(() => {
+    if (loading) return;
+    const saved = sessionStorage.getItem('homeScrollY');
+    if (!saved) return;
+    sessionStorage.removeItem('homeScrollY');
+    window.scrollTo({ top: Number(saved), behavior: 'instant' });
+  }, [loading]);
 
   // Pull-to-refresh: track touch drag from the top of the page
   useEffect(() => {

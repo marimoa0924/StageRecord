@@ -81,7 +81,11 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
   }
 
   return (
-    <Link href={`/post/${post.id}`} className="block">
+    <Link
+      href={`/post/${post.id}`}
+      className="block"
+      onClick={() => { try { sessionStorage.setItem('homeScrollY', String(window.scrollY)); } catch {} }}
+    >
       <article className="feed-card flex gap-3 px-4 py-4 border-b border-zinc-200/80 dark:border-zinc-800/60 cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/[0.02]">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white text-lg shrink-0 mt-0.5 shadow-sm">
           🎭

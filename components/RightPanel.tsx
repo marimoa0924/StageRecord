@@ -11,7 +11,6 @@ interface FolderRow {
 
 interface Stats {
   shows: number;
-  views: number;
   reviews: number;
 }
 
@@ -27,11 +26,10 @@ export default function RightPanel() {
 
     fetch('/api/posts')
       .then((r) => r.json())
-      .then((d: { viewing_count: number; review_count: number }[]) => {
+      .then((d: { review_count: number }[]) => {
         if (!Array.isArray(d)) return;
         setStats({
           shows: d.length,
-          views: d.reduce((s, p) => s + (Number(p.viewing_count) || 0), 0),
           reviews: d.reduce((s, p) => s + (Number(p.review_count) || 0), 0),
         });
       })
@@ -73,7 +71,6 @@ export default function RightPanel() {
           <h2 className="px-4 pt-3.5 pb-2 text-zinc-900 dark:text-white font-extrabold text-[19px]">관람 요약</h2>
           <dl className="px-4 pb-3.5 flex flex-col gap-2.5">
             <SummaryRow label="기록한 공연" value={stats.shows} unit="개" />
-            <SummaryRow label="총 관람" value={stats.views} unit="회" />
             <SummaryRow label="후기" value={stats.reviews} unit="개" />
           </dl>
         </div>

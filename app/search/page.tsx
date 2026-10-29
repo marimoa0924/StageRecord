@@ -197,11 +197,16 @@ function SearchContent() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // 뒤로가기 복원: 캐시된 결과가 즉시 렌더되므로 저장한 스크롤로 복원
+  // 뒤로가기 복원: 캐시된 결과가 즉시 렌더됨. instant로 몇 프레임 복원 (smooth·Next 리셋 극복)
   useEffect(() => {
-    if (searchScroll > 0 && results.length > 0) {
-      const y = searchScroll;
-      requestAnimationFrame(() => window.scrollTo(0, y));
+    const y = results.length > 0 ? searchScroll : 0;
+    if (y > 0) {
+      let n = 0;
+      const restore = () => {
+        window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
+        if (++n < 5) requestAnimationFrame(restore);
+      };
+      requestAnimationFrame(restore);
     }
     const onScroll = () => { searchScroll = window.scrollY; };
     window.addEventListener('scroll', onScroll, { passive: true });

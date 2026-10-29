@@ -48,11 +48,17 @@ export default function Home() {
 
   useEffect(() => { fetchPosts(sort); }, [fetchPosts, sort]);
 
-  // 뒤로가기 복원: 캐시된 목록이 즉시 렌더되어 높이가 유지되므로 저장한 스크롤로 복원
+  // 뒤로가기 복원: 캐시된 목록이 즉시 렌더되어 높이가 유지됨. instant로 몇 프레임 복원해
+  // (html의 scroll-behavior:smooth 애니메이션과 Next의 스크롤 리셋을 이김)
   useEffect(() => {
-    if (cachedPosts !== null && cachedScroll > 0) {
-      const y = cachedScroll;
-      requestAnimationFrame(() => window.scrollTo(0, y));
+    const y = cachedPosts !== null ? cachedScroll : 0;
+    if (y > 0) {
+      let n = 0;
+      const restore = () => {
+        window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
+        if (++n < 5) requestAnimationFrame(restore);
+      };
+      requestAnimationFrame(restore);
     }
     const onScroll = () => { cachedScroll = window.scrollY; };
     window.addEventListener('scroll', onScroll, { passive: true });

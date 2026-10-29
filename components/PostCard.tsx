@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import ImageLightbox from '@/components/ImageLightbox';
+import EditPostModal from '@/components/EditPostModal';
 
 interface Post {
   id: number;
@@ -51,6 +52,7 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
   const [liking, setLiking] = useState(false);
   const [showLoginHint, setShowLoginHint] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
@@ -98,12 +100,20 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
             <span className="text-zinc-300 dark:text-zinc-700 text-[13px]">·</span>
             <span className="text-zinc-400 dark:text-zinc-500 text-[13px]">{formatTime(post.created_at)}</span>
             {isOwner && (
-              <button
-                onClick={handleDelete}
-                className="ml-auto text-zinc-400 dark:text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
-              >
-                삭제
-              </button>
+              <div className="ml-auto flex items-center">
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowEdit(true); }}
+                  className="text-zinc-400 dark:text-zinc-700 hover:text-sky-500 text-xs transition min-h-[44px] flex items-center px-2"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-zinc-400 dark:text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-2"
+                >
+                  삭제
+                </button>
+              </div>
             )}
           </div>
 
@@ -150,6 +160,14 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
             <ImageLightbox
               images={[post.casting_board]}
               onClose={() => setShowLightbox(false)}
+            />
+          )}
+
+          {showEdit && (
+            <EditPostModal
+              post={post}
+              onClose={() => setShowEdit(false)}
+              onSaved={() => { setShowEdit(false); onDelete?.(); }}
             />
           )}
 

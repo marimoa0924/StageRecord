@@ -1,6 +1,8 @@
 // 캐스팅보드 이미지 → 출연 배우 이름 추출 (Gemini 비전, REST 호출). 단건·일괄 공용
-// 모델은 자주 폐기되므로 GEMINI_MODEL env로 교체 가능
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+// 모델은 자주 폐기·과부하되므로 GEMINI_MODEL env로 교체하거나, 기본은 여러 모델을 폴백
+const MODELS = process.env.GEMINI_MODEL
+  ? [process.env.GEMINI_MODEL]
+  : ['gemini-flash-latest', 'gemini-3.8-flash'];
 
 const PROMPT =
   '이 공연 캐스팅보드 이미지에서 출연 배우의 사람 이름만 뽑아 JSON 문자열 배열로 반환해. ' +
@@ -23,19 +25,25 @@ export async function extractCastFromImage(url: string): Promise<string[]> {
       generationConfig: { responseMimeType: 'application/json', temperature: 0 },
     }),
   };
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
 
-  // 과부하(503)·레이트리밋(429)·일시 오류(500)는 짧게 재시도
+  // 과부하(503)·레이트리밋(429)·일시 오류(500)는 재시도, 계속 실패하면 다음 모델로 폴백
   const RETRYABLE = new Set([429, 500, 503]);
   let res: Response | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    res = await fetch(endpoint, reqInit);
-    if (res.ok || !RETRYABLE.has(res.status)) break;
-    if (attempt < 2) await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+  let lastBody = '';
+  let lastStatus = 0;
+  outer: for (const model of MODELS) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch(endpoint, reqInit);
+      if (res.ok) break outer;
+      lastStatus = res.status;
+      lastBody = await res.text().catch(() => '');
+      if (!RETRYABLE.has(res.status)) break; // 비재시도 오류 → 다음 모델
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+    }
   }
   if (!res || !res.ok) {
-    const body = res ? await res.text().catch(() => '') : '';
-    throw new Error(`Gemini ${res?.status ?? '??'}: ${body.slice(0, 300)}`);
+    throw new Error(`Gemini ${lastStatus || '??'}: ${lastBody.slice(0, 300)}`);
   }
 
   const json = await res.json();

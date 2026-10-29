@@ -72,6 +72,16 @@ export default function Sidebar({ onNewPost }: Props) {
           }
           label="검색"
         />
+        <SideNavItem
+          href="/stats"
+          active={pathname === '/stats'}
+          icon={
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={pathname === '/stats' ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          }
+          label="결산"
+        />
         <button
           onClick={toggle}
           className="flex items-center gap-4 px-3 py-3 rounded-2xl transition text-[17px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900/60 font-medium"

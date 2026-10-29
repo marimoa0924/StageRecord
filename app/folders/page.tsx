@@ -111,6 +111,9 @@ export default function FoldersPage() {
 
         {!loading && data && (
           <>
+            {/* 결산 바로가기 */}
+            <FolderCard href="/stats" icon="📊" title="결산 보기" sub="관극 통계 모아보기" />
+
             {/* 찍먹극 — always shown if any exist */}
             {data.chikmuk_count > 0 && (
               <FolderCard

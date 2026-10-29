@@ -25,12 +25,6 @@ export async function GET() {
       FROM posts GROUP BY 1 ORDER BY 1
     `;
 
-    const [timeOfDay] = await sql`
-      SELECT COUNT(*) FILTER (WHERE title LIKE '%낮공%')::int AS day,
-             COUNT(*) FILTER (WHERE title LIKE '%밤공%')::int AS night
-      FROM posts
-    `;
-
     const [price] = await sql`
       SELECT COUNT(price)::int           AS priced,
              COALESCE(SUM(price), 0)::int AS total,
@@ -58,7 +52,6 @@ export async function GET() {
       latest_date: totals.latest_date,
       top_shows: topShows,
       by_month: byMonth,
-      time_of_day: timeOfDay,
       price: { ...price, max_title: maxPriceShow?.title ?? null },
       top_actors: topActors,
       total_reviews,

@@ -64,6 +64,8 @@ export const ready: Promise<void> = DATABASE_URL
       // posts 추가 필드: 가격(원), 배우 태그(JSON 배열) — 기존 행은 NULL/'[]'
       await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS price INTEGER`;
       await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS actors TEXT NOT NULL DEFAULT '[]'`;
+      // 캐스팅보드 배우 자동추출을 이미 시도했는지 (빈 결과 글의 무한 재처리 방지)
+      await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS cast_scanned BOOLEAN NOT NULL DEFAULT false`;
       // 제목 → 작품명 추출 (날짜 단어 + 공연유형/회차 접미사 제거). folders 쿼리들이 공용으로 사용
       await sql`
         CREATE OR REPLACE FUNCTION show_name(raw TEXT) RETURNS TEXT AS $$

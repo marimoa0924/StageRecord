@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import ActorInput from '@/components/ActorInput';
+import ScanCastButton from '@/components/ScanCastButton';
 
 interface Props {
   onClose: () => void;
@@ -151,12 +152,6 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
               />
             </div>
 
-            {/* Actors */}
-            <div>
-              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">출연 배우</label>
-              <ActorInput value={actors} onChange={setActors} />
-            </div>
-
             {/* Casting board */}
             <div>
               <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">캐스팅보드</label>
@@ -182,6 +177,16 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
                 )}
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </div>
+
+            {/* Actors — 캐스팅보드 아래에 두어 보드를 보며 입력 */}
+            <div>
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">출연 배우</label>
+              <ActorInput value={actors} onChange={setActors} />
+              <ScanCastButton
+                imageUrl={imageUrl || null}
+                onExtracted={(names) => setActors((prev) => [...new Set([...prev, ...names])].slice(0, 20))}
+              />
             </div>
           </form>
         </div>

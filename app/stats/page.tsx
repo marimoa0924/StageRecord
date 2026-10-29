@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useOwner } from '@/lib/useOwner';
 
 interface NamedCount { name: string; count: number }
 interface Stats {
@@ -11,7 +12,6 @@ interface Stats {
   latest_date: string | null;
   top_shows: NamedCount[];
   by_month: { month: string; count: number }[];
-  time_of_day: { day: number; night: number };
   price: { priced: number; total: number; avg: number; max: number | null; max_title: string | null };
   top_actors: NamedCount[];
   total_reviews: number;
@@ -48,8 +48,10 @@ function BarRow({ label, value, max, unit }: { label: string; value: number; max
 
 export default function StatsPage() {
   const router = useRouter();
+  const { isOwner } = useOwner();
   const [s, setS] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [batch, setBatch] = useState<{ running: boolean; done: number; remaining: number | null }>({ running: false, done: 0, remaining: null });
 
   useEffect(() => {
     fetch('/api/stats')
@@ -59,13 +61,35 @@ export default function StatsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // 캐스팅보드가 있고 배우가 비어있는 기록을 몇 개씩 반복 호출로 처리
+  async function runBatch() {
+    if (batch.running) return;
+    setBatch({ running: true, done: 0, remaining: null });
+    let done = 0;
+    for (;;) {
+      let data: { processed?: number; remaining?: number; error?: string } | null = null;
+      try {
+        const res = await fetch('/api/extract-cast/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 2 }),
+        });
+        data = await res.json();
+      } catch { break; }
+      if (!data || data.error) break;
+      done += data.processed ?? 0;
+      setBatch({ running: true, done, remaining: data.remaining ?? null });
+      if (!data.remaining || (data.processed ?? 0) === 0) break; // 완료 또는 더 진행 불가
+    }
+    setBatch((b) => ({ ...b, running: false }));
+    fetch('/api/stats').then((r) => r.json()).then((d) => { if (!d?.error) setS(d); }).catch(() => {});
+  }
+
   const span = s?.first_date && s?.latest_date ? daysBetween(s.first_date, s.latest_date) : 0;
   const avgGap = s && s.total_shows > 1 ? Math.round(span / (s.total_shows - 1)) : 0;
   const maxShow = s?.top_shows[0]?.count ?? 0;
   const maxMonth = s ? Math.max(1, ...s.by_month.map((m) => m.count)) : 1;
   const maxActor = s?.top_actors[0]?.count ?? 0;
-  const tod = s?.time_of_day;
-  const todTotal = (tod?.day ?? 0) + (tod?.night ?? 0);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -99,6 +123,26 @@ export default function StatsPage() {
               <p className="text-3xl font-extrabold mt-1">공연 {s.total_shows.toLocaleString('ko-KR')}회</p>
               <p className="text-white/90 mt-1">작품 {s.total_works.toLocaleString('ko-KR')}편 · 후기 {s.total_reviews.toLocaleString('ko-KR')}개</p>
             </section>
+
+            {/* 소유자: 캐스팅보드 배우 일괄 추출 */}
+            {isOwner && (
+              <section className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800/60 bg-zinc-50/60 dark:bg-zinc-900/40 p-4">
+                <h2 className="text-zinc-900 dark:text-white font-extrabold text-[17px]">캐스팅보드 배우 자동 채우기</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 text-[13px] mt-1">배우가 비어있는 기록의 캐스팅보드를 Gemini로 스캔해 배우를 채웁니다.</p>
+                <button
+                  onClick={runBatch}
+                  disabled={batch.running}
+                  className="mt-3 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white font-bold rounded-full px-4 py-2 text-sm transition"
+                >
+                  {batch.running
+                    ? `처리 중… ${batch.done}개${batch.remaining != null ? ` (남은 ${batch.remaining})` : ''}`
+                    : '일괄 추출 시작'}
+                </button>
+                {!batch.running && batch.done > 0 && (
+                  <p className="text-emerald-600 dark:text-emerald-400 text-[13px] mt-2">완료 — {batch.done}개 기록에 배우를 채웠어요.</p>
+                )}
+              </section>
+            )}
 
             {/* 관극 기간 */}
             {s.first_date && s.latest_date && (
@@ -136,20 +180,6 @@ export default function StatsPage() {
                 {s.by_month.map((m) => (
                   <BarRow key={m.month} label={m.month} value={m.count} max={maxMonth} unit="회" />
                 ))}
-              </Card>
-            )}
-
-            {/* 낮공 / 밤공 */}
-            {todTotal > 0 && tod && (
-              <Card title="낮공 vs 밤공">
-                <div className="flex items-center gap-3">
-                  <span className="text-[13px] text-zinc-700 dark:text-zinc-300 w-16 shrink-0">낮공 {tod.day}</span>
-                  <div className="flex-1 h-5 flex rounded-full overflow-hidden bg-zinc-200/70 dark:bg-zinc-800/70">
-                    <div className="h-full bg-amber-400" style={{ width: `${(tod.day / todTotal) * 100}%` }} />
-                    <div className="h-full bg-indigo-500" style={{ width: `${(tod.night / todTotal) * 100}%` }} />
-                  </div>
-                  <span className="text-[13px] text-zinc-700 dark:text-zinc-300 w-16 shrink-0 text-right">밤공 {tod.night}</span>
-                </div>
               </Card>
             )}
 

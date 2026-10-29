@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ReviewThread from '@/components/ReviewThread';
 import ActorInput from '@/components/ActorInput';
+import ScanCastButton from '@/components/ScanCastButton';
 import { useOwner } from '@/lib/useOwner';
 
 interface Post {
@@ -151,7 +152,16 @@ function EditModal({
 
           <div>
             <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">출연 배우</label>
+            {post.casting_board && (
+              <div className="relative w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 mb-2" style={{ aspectRatio: '16/9' }}>
+                <Image src={post.casting_board} alt="캐스팅보드" fill className="object-contain" />
+              </div>
+            )}
             <ActorInput value={actors} onChange={setActors} />
+            <ScanCastButton
+              imageUrl={post.casting_board}
+              onExtracted={(names) => setActors((prev) => [...new Set([...prev, ...names])].slice(0, 20))}
+            />
           </div>
         </div>
       </div>

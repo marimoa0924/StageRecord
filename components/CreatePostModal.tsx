@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import Image from 'next/image';
+import ActorInput from '@/components/ActorInput';
 
 interface Props {
   onClose: () => void;
@@ -11,6 +12,8 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [viewingCount, setViewingCount] = useState(1);
+  const [price, setPrice] = useState('');
+  const [actors, setActors] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +46,8 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
         performance_date: date,
         viewing_count: viewingCount,
         casting_board: imageUrl || null,
+        price: price === '' ? null : Number(price),
+        actors,
       }),
     });
     setSubmitting(false);
@@ -130,6 +135,26 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
                   className="w-11 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
                 >+</button>
               </div>
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 가격 (원)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                className="w-full h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-sky-500 transition"
+                placeholder="예: 140000 (선택)"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </div>
+
+            {/* Actors */}
+            <div>
+              <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">출연 배우</label>
+              <ActorInput value={actors} onChange={setActors} />
             </div>
 
             {/* Casting board */}

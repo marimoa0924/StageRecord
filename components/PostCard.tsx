@@ -15,6 +15,12 @@ interface Post {
   review_count?: number;
   like_count?: number;
   liked_by_me?: number;
+  price?: number | null;
+  actors?: string;
+}
+
+function parseActors(raw?: string | null): string[] {
+  try { const v = JSON.parse(raw || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
 }
 
 function formatDate(iso: string) {
@@ -112,7 +118,22 @@ export default function PostCard({ post, isOwner, onDelete }: Props) {
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               {post.viewing_count}회 관람
             </span>
+            {post.price != null && (
+              <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 text-xs rounded-full px-2.5 py-1 border border-zinc-200/80 dark:border-zinc-800/60">
+                ₩ {post.price.toLocaleString('ko-KR')}
+              </span>
+            )}
           </div>
+
+          {parseActors(post.actors).length > 0 && (
+            <div className="flex gap-1.5 mt-2 flex-wrap">
+              {parseActors(post.actors).map((a) => (
+                <span key={a} className="inline-flex items-center bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 text-xs rounded-full px-2.5 py-1">
+                  {a}
+                </span>
+              ))}
+            </div>
+          )}
 
           {post.casting_board && (
             <button

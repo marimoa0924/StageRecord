@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
+import { parsePriceActors } from '@/lib/postFields';
 import { auth } from '@/auth';
 
 function isValidBlobUrl(url: unknown): boolean {
@@ -62,9 +63,9 @@ export async function POST(req: NextRequest) {
     if ('error' in check) return check.error;
 
     await ready;
-    const { title, performance_date, viewing_count, casting_board } = await req.json();
+    const { title, performance_date, viewing_count, casting_board, price, actors } = await req.json();
 
-    if (!title?.trim() || typeof title !== 'string' || title.length > 300) {
+    if (typeof title !== 'string' || !title.trim() || title.length > 300) {
       return NextResponse.json({ error: '제목을 확인해주세요. (최대 300자)' }, { status: 400 });
     }
     if (typeof performance_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(performance_date)) {
@@ -77,10 +78,12 @@ export async function POST(req: NextRequest) {
     if (casting_board != null && !isValidBlobUrl(casting_board)) {
       return NextResponse.json({ error: '허용되지 않는 이미지 URL입니다.' }, { status: 400 });
     }
+    const parsed = parsePriceActors(price, actors);
+    if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
     const [post] = await sql`
-      INSERT INTO posts (title, performance_date, viewing_count, casting_board)
-      VALUES (${title.trim()}, ${performance_date}, ${count}, ${casting_board ?? null})
+      INSERT INTO posts (title, performance_date, viewing_count, casting_board, price, actors)
+      VALUES (${title.trim()}, ${performance_date}, ${count}, ${casting_board ?? null}, ${parsed.price}, ${JSON.stringify(parsed.actors)})
       RETURNING *
     `;
     return NextResponse.json(post, { status: 201 });

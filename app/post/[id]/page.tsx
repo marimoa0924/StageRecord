@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ReviewThread from '@/components/ReviewThread';
+import ActorInput from '@/components/ActorInput';
 import { useOwner } from '@/lib/useOwner';
 
 interface Post {
@@ -12,6 +13,12 @@ interface Post {
   viewing_count: number;
   casting_board: string | null;
   created_at: string;
+  price?: number | null;
+  actors?: string;
+}
+
+function parseActors(raw?: string | null): string[] {
+  try { const v = JSON.parse(raw || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
 }
 
 function formatDate(iso: string) {
@@ -40,11 +47,15 @@ function EditModal({
 }) {
   const [date, setDate] = useState(post.performance_date.slice(0, 10));
   const [viewingCount, setViewingCount] = useState(post.viewing_count);
+  const [price, setPrice] = useState(post.price != null ? String(post.price) : '');
+  const [actors, setActors] = useState<string[]>(parseActors(post.actors));
   const [saving, setSaving] = useState(false);
 
   const changed =
     date !== post.performance_date.slice(0, 10) ||
-    viewingCount !== post.viewing_count;
+    viewingCount !== post.viewing_count ||
+    price !== (post.price != null ? String(post.price) : '') ||
+    JSON.stringify(actors) !== JSON.stringify(parseActors(post.actors));
 
   async function save() {
     if (!date || !changed) return;
@@ -52,7 +63,12 @@ function EditModal({
     const res = await fetch(`/api/posts/${post.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ performance_date: date, viewing_count: viewingCount }),
+      body: JSON.stringify({
+        performance_date: date,
+        viewing_count: viewingCount,
+        price: price === '' ? null : Number(price),
+        actors,
+      }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -118,6 +134,24 @@ function EditModal({
                 className="w-14 h-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xl transition"
               >+</button>
             </div>
+          </div>
+
+          <div>
+            <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 가격 (원)</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="예: 140000 (선택)"
+              className="w-full h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-sky-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">출연 배우</label>
+            <ActorInput value={actors} onChange={setActors} />
           </div>
         </div>
       </div>
@@ -227,7 +261,22 @@ export default function PostPage() {
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               {post.viewing_count}회 관람
             </span>
+            {post.price != null && (
+              <span className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 text-xs rounded-full px-2.5 py-1 border border-zinc-200/80 dark:border-zinc-800/60">
+                ₩ {post.price.toLocaleString('ko-KR')}
+              </span>
+            )}
           </div>
+
+          {parseActors(post.actors).length > 0 && (
+            <div className="flex gap-1.5 mt-2 flex-wrap">
+              {parseActors(post.actors).map((a) => (
+                <span key={a} className="inline-flex items-center bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 text-xs rounded-full px-2.5 py-1">
+                  {a}
+                </span>
+              ))}
+            </div>
+          )}
 
           {post.casting_board && (
             <div className="mt-3 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-950" style={{ aspectRatio: '16/9' }}>

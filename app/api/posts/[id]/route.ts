@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { requireOwner } from '@/lib/requireOwner';
+import { parsePriceActors } from '@/lib/postFields';
 
 function parseId(raw: string): number | null {
   const n = Number(raw);
@@ -35,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!id) return NextResponse.json({ error: '유효하지 않은 게시물 ID입니다.' }, { status: 400 });
 
     const body = await req.json();
-    const { performance_date, viewing_count } = body;
+    const { performance_date, viewing_count, price, actors } = body;
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(performance_date))) {
       return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다.' }, { status: 400 });
@@ -44,10 +45,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!Number.isInteger(vc) || vc < 1 || vc > 9999) {
       return NextResponse.json({ error: '관람 횟수는 1~9999 사이의 정수여야 합니다.' }, { status: 400 });
     }
+    const parsed = parsePriceActors(price, actors);
+    if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
     const [updated] = await sql`
       UPDATE posts
-      SET performance_date = ${performance_date}, viewing_count = ${vc}
+      SET performance_date = ${performance_date}, viewing_count = ${vc},
+          price = ${parsed.price}, actors = ${JSON.stringify(parsed.actors)}
       WHERE id = ${id}
       RETURNING *
     `;

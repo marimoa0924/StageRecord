@@ -15,20 +15,27 @@ export async function extractCastFromImage(url: string): Promise<string[]> {
   const mime = imgRes.headers.get('content-type') || 'image/jpeg';
   const data = Buffer.from(await imgRes.arrayBuffer()).toString('base64');
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data } }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0 },
-      }),
-    },
-  );
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Gemini ${res.status}: ${body.slice(0, 300)}`);
+  const reqInit = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data } }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+    }),
+  };
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
+
+  // 과부하(503)·레이트리밋(429)·일시 오류(500)는 짧게 재시도
+  const RETRYABLE = new Set([429, 500, 503]);
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(endpoint, reqInit);
+    if (res.ok || !RETRYABLE.has(res.status)) break;
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+  }
+  if (!res || !res.ok) {
+    const body = res ? await res.text().catch(() => '') : '';
+    throw new Error(`Gemini ${res?.status ?? '??'}: ${body.slice(0, 300)}`);
   }
 
   const json = await res.json();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { logger } from '@/lib/logger';
+import { auth } from '@/auth';
 
 const MAX_QUERY_LENGTH = 100;
 const RATE_LIMIT = { requests: 30, windowMs: 60_000 }; // 30 req/min per IP
@@ -29,7 +30,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '검색어가 너무 깁니다.' }, { status: 400 });
     }
 
-    const vid = req.cookies.get('vid')?.value ?? '0';
+    // 글 좋아요는 이메일로 저장되므로 쿠키 vid가 아닌 로그인 이메일로 매칭
+    const likeId = (await auth())?.user?.email ?? '__no_match__';
     const pattern = `%${escapeLike(q)}%`;
 
     const posts = await sql`
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*)::int FROM reviews WHERE post_id = p.id) AS review_count,
         (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id) AS like_count,
         (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
-                                            AND visitor_id = ${vid}) AS liked_by_me
+                                            AND visitor_id = ${likeId}) AS liked_by_me
       FROM posts p
       LEFT JOIN reviews r ON r.post_id = p.id
       WHERE p.title   ILIKE ${pattern}

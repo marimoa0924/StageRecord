@@ -12,10 +12,7 @@ export async function GET() {
     const rows = await sql`
       WITH fn AS (
         SELECT
-          TRIM(REGEXP_REPLACE(
-            REGEXP_REPLACE(title, '^[^ ]+ ', ''),
-            ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''
-          )) AS folder_name,
+          show_name(title) AS folder_name,
           viewing_count,
           performance_date
         FROM posts

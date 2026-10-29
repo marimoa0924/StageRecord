@@ -26,10 +26,10 @@ export async function GET(
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
                                               AND visitor_id = ${likeId}) AS liked_by_me
         FROM posts p
-        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', '')) IN (
-          SELECT TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))
+        WHERE show_name(p.title) IN (
+          SELECT show_name(title)
           FROM posts
-          GROUP BY TRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''))
+          GROUP BY show_name(title)
           HAVING COUNT(*) = 1
         )
         ORDER BY p.performance_date ASC
@@ -42,7 +42,7 @@ export async function GET(
           (SELECT COUNT(*)::int FROM likes   WHERE post_id = p.id
                                               AND visitor_id = ${likeId}) AS liked_by_me
         FROM posts p
-        WHERE TRIM(REGEXP_REPLACE(REGEXP_REPLACE(p.title, '^[^ ]+ ', ''), ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', '')) = ${title}
+        WHERE show_name(p.title) = ${title}
         ORDER BY p.performance_date ASC
       `;
     }

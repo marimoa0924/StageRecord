@@ -55,6 +55,15 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(review_id, visitor_id)
         )
       `;
+      // 제목 → 작품명 추출 (날짜 단어 + 공연유형/회차 접미사 제거). folders 쿼리들이 공용으로 사용
+      await sql`
+        CREATE OR REPLACE FUNCTION show_name(raw TEXT) RETURNS TEXT AS $$
+          SELECT TRIM(REGEXP_REPLACE(
+            REGEXP_REPLACE(raw, '^[^ ]+ ', ''),
+            ' (?:(?:낮공|밤공|세미막|페어막) )?자[가-힣]+.*$', ''
+          ))
+        $$ LANGUAGE SQL IMMUTABLE
+      `;
       // One-time title renames (idempotent: skip if 3rd word already matches)
       await sql`UPDATE posts SET title = replace(title, ' 수영장의 ', ' 수영장의 사과 ') WHERE split_part(title,' ',2)='수영장의' AND split_part(title,' ',3)!='사과'`;
       await sql`UPDATE posts SET title = replace(title, ' 올랜도 ', ' 올랜도 인 버지니아 ') WHERE split_part(title,' ',2)='올랜도' AND split_part(title,' ',3)!='인'`;

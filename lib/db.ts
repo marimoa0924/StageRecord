@@ -34,7 +34,7 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(post_id, visitor_id)
         )
       `;
-      // 기존 배포는 likes가 ip_address 컬럼으로 이미 존재 → visitor_id로 개명 (데이터·UNIQUE 유지)
+      // Migrate old ip_address column to visitor_id if it still exists
       await sql`
         DO $$
         BEGIN
@@ -44,7 +44,7 @@ export const ready: Promise<void> = DATABASE_URL
           ) THEN
             ALTER TABLE likes RENAME COLUMN ip_address TO visitor_id;
           END IF;
-        END $$;
+        END $$
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS review_likes (
@@ -55,5 +55,21 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(review_id, visitor_id)
         )
       `;
+      // Add is_private column if it doesn't exist
+      await sql`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'posts' AND column_name = 'is_private'
+          ) THEN
+            ALTER TABLE posts ADD COLUMN is_private BOOLEAN NOT NULL DEFAULT FALSE;
+          END IF;
+        END $$
+      `;
+      // One-time title renames (idempotent: skip if 3rd word already matches)
+      await sql`UPDATE posts SET title = replace(title, ' 수영장의 ', ' 수영장의 사과 ') WHERE split_part(title,' ',2)='수영장의' AND split_part(title,' ',3)!='사과'`;
+      await sql`UPDATE posts SET title = replace(title, ' 올랜도 ', ' 올랜도 인 버지니아 ') WHERE split_part(title,' ',2)='올랜도' AND split_part(title,' ',3)!='인'`;
+      await sql`UPDATE posts SET title = replace(title, ' 미세스 ', ' 미세스 다웃파이어 ') WHERE split_part(title,' ',2)='미세스' AND split_part(title,' ',3)!='다웃파이어'`;
     })().catch((e) => console.error('[db init]', e))
   : Promise.resolve();

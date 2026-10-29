@@ -1,6 +1,41 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import ImageLightbox from '@/components/ImageLightbox';
+
+function parseBulkThread(raw: string): string[] {
+  const lines = raw.split('\n');
+  const results: string[] = [];
+  let current: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    // Detect 4-line Twitter header: Name / @handle / · / date
+    const isHeader =
+      i + 3 < lines.length &&
+      lines[i].trim() !== '' &&
+      !lines[i].startsWith('@') &&
+      lines[i].trim() !== '·' &&
+      lines[i + 1].startsWith('@') &&
+      lines[i + 2].trim() === '·' &&
+      lines[i + 3].trim() !== '';
+
+    if (isHeader) {
+      const text = current.join('\n').trim();
+      if (text) results.push(text);
+      current = [];
+      i += 4;
+    } else {
+      current.push(lines[i]);
+      i++;
+    }
+  }
+
+  const text = current.join('\n').trim();
+  if (text) results.push(text);
+
+  return results;
+}
 
 interface Review {
   id: number;
@@ -27,27 +62,48 @@ function parseImages(raw: string): string[] {
 }
 
 function ReviewImages({ images }: { images: string[] }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   if (images.length === 0) return null;
-  if (images.length === 1) {
-    return (
-      <div className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-800/60 aspect-video bg-zinc-950">
-        <Image src={images[0]} alt="" fill className="object-cover" />
-      </div>
-    );
-  }
+
   return (
-    <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
-      {images.slice(0, 4).map((url, i) => (
-        <div key={i} className="relative aspect-square bg-zinc-950">
-          <Image src={url} alt="" fill className="object-cover" />
-          {i === 3 && images.length > 4 && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold">
-              +{images.length - 4}
-            </div>
-          )}
+    <>
+      {images.length === 1 ? (
+        <button
+          type="button"
+          onClick={() => setLightboxIndex(0)}
+          className="mt-2 relative w-full rounded-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800/60 aspect-video bg-zinc-50 dark:bg-zinc-950 cursor-zoom-in block"
+        >
+          <Image src={images[0]} alt="" fill className="object-cover" />
+        </button>
+      ) : (
+        <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
+          {images.slice(0, 4).map((url, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setLightboxIndex(i)}
+              className="relative aspect-square bg-zinc-100 dark:bg-zinc-950 cursor-zoom-in"
+            >
+              <Image src={url} alt="" fill className="object-cover" />
+              {i === 3 && images.length > 4 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold pointer-events-none">
+                  +{images.length - 4}
+                </div>
+              )}
+            </button>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={images}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -73,7 +129,7 @@ function ReviewLikeButton({
   return (
     <button
       onClick={toggle}
-      className={`flex items-center gap-1.5 text-[13px] transition min-h-[36px] ${liked ? 'text-pink-500' : 'text-zinc-600 hover:text-pink-400'}`}
+      className={`flex items-center gap-1.5 text-[13px] transition min-h-[36px] ${liked ? 'text-pink-500' : 'text-zinc-400 dark:text-zinc-600 hover:text-pink-400'}`}
     >
       {liked ? (
         <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="currentColor">
@@ -100,8 +156,19 @@ export default function ReviewThread({ postId, isOwner }: Props) {
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Hide BottomNav while soft keyboard is open (works on both iOS and Android)
+  useEffect(() => {
+    if (!isOwner) return;
+    return () => {
+      window.dispatchEvent(new CustomEvent('compose-keyboard-close'));
+    };
+  }, [isOwner]);
 
   const fetchReviews = useCallback(async () => {
     const res = await fetch(`/api/posts/${postId}/reviews`);
@@ -123,21 +190,25 @@ export default function ReviewThread({ postId, isOwner }: Props) {
     if (!files.length) return;
     setUploading(true);
     const urls: string[] = [];
-    for (const file of files) {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.url) urls.push(data.url);
-      else alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.url) urls.push(data.url);
+        else alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
+      }
+    } catch {
+      alert('업로드 중 오류가 발생했습니다. 파일 크기(10MB 이하)를 확인하고 다시 시도해주세요.');
+    } finally {
+      setPendingImages((prev) => [...prev, ...urls]);
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
-    setPendingImages((prev) => [...prev, ...urls]);
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = '';
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     if (!content.trim() && pendingImages.length === 0) return;
     setSubmitting(true);
     await fetch(`/api/posts/${postId}/reviews`, {
@@ -162,12 +233,29 @@ export default function ReviewThread({ postId, isOwner }: Props) {
     fetchReviews();
   }
 
+  async function handleBulkSubmit() {
+    const entries = parseBulkThread(bulkText);
+    if (!entries.length) return;
+    setBulkSubmitting(true);
+    for (const entry of entries) {
+      await fetch(`/api/posts/${postId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: entry, images: [] }),
+      });
+    }
+    setBulkText('');
+    setShowBulk(false);
+    setBulkSubmitting(false);
+    fetchReviews();
+  }
+
   const hasContent = content.trim().length > 0 || pendingImages.length > 0;
 
   return (
-    <div className={isOwner ? 'pb-36' : 'pb-4'}>
+    <div className={isOwner ? 'pb-24' : 'pb-4'}>
       {reviews.length === 0 && !isOwner && (
-        <p className="text-zinc-700 text-center py-10 text-sm">아직 후기가 없습니다.</p>
+        <p className="text-zinc-400 dark:text-zinc-700 text-center py-10 text-sm">아직 후기가 없습니다.</p>
       )}
 
       {reviews.map((review, idx) => {
@@ -177,20 +265,20 @@ export default function ReviewThread({ postId, isOwner }: Props) {
 
         return (
           <article key={review.id} className="flex gap-3 px-4 pt-4">
-            {/* Thread line (no avatar) */}
-            <div className="flex flex-col items-center shrink-0 w-4">
-              <div className={`w-px bg-zinc-800 ${showLine ? 'flex-1 min-h-full' : 'h-3'}`} />
+            {/* w-10 matches the avatar column width so thread lines stay aligned */}
+            <div className="flex flex-col items-center shrink-0 w-10">
+              <div className={`w-0.5 bg-zinc-200 dark:bg-zinc-800 ${showLine ? 'flex-1 min-h-full' : 'h-3'}`} />
             </div>
 
-            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-800/60' : ''}`}>
+            <div className={`flex-1 min-w-0 pb-4 ${isLast && !isOwner ? 'border-b border-zinc-200/80 dark:border-zinc-800/60' : ''}`}>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-white font-bold text-sm">주인장</span>
-                <span className="text-zinc-700 text-[13px]">·</span>
-                <span className="text-zinc-500 text-[13px]">{formatTime(review.created_at)}</span>
+                <span className="text-zinc-900 dark:text-white font-bold text-sm">주인장</span>
+                <span className="text-zinc-300 dark:text-zinc-700 text-[13px]">·</span>
+                <span className="text-zinc-400 dark:text-zinc-500 text-[13px]">{formatTime(review.created_at)}</span>
                 {isOwner && (
                   <button
                     onClick={() => handleDelete(review.id)}
-                    className="ml-auto text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
+                    className="ml-auto text-zinc-400 dark:text-zinc-700 hover:text-red-500 text-xs transition min-h-[44px] flex items-center pl-3"
                   >
                     삭제
                   </button>
@@ -198,14 +286,13 @@ export default function ReviewThread({ postId, isOwner }: Props) {
               </div>
 
               {review.content && (
-                <p className="text-[#e7e9ea] text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
+                <p className="text-zinc-700 dark:text-[#e7e9ea] text-[15px] leading-relaxed whitespace-pre-wrap mt-0.5">
                   {review.content}
                 </p>
               )}
 
               <ReviewImages images={images} />
 
-              {/* Like button */}
               <div className="mt-2">
                 <ReviewLikeButton
                   postId={postId}
@@ -219,47 +306,119 @@ export default function ReviewThread({ postId, isOwner }: Props) {
         );
       })}
 
-      {/* Compose bar — fixed above bottom nav */}
-      {isOwner && (
-        <div className="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none lg:bottom-0">
-          <div className="w-full max-w-[598px] lg:ml-0 pointer-events-auto bg-zinc-950 border-t border-zinc-800/60">
-            {pendingImages.length > 0 && (
-              <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
-                {pendingImages.map((url, i) => (
-                  <div key={i} className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-700">
-                    <Image src={url} alt="" fill className="object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
-                      className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/80 rounded-full flex items-center justify-center text-white text-xs"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+      {showBulk && (
+        /* Mobile: full-screen so keyboard never hides content
+           Desktop sm+: centered dialog with backdrop */
+        <div className="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center sm:bg-black/70 sm:backdrop-blur-sm">
+          <div className="flex flex-col w-full h-full sm:h-auto sm:max-w-[598px] sm:max-h-[85dvh] sm:rounded-3xl bg-white dark:bg-zinc-950 overflow-hidden sm:shadow-2xl">
 
-            <div className="flex items-center gap-3 px-4 py-2.5">
+            {/* Header */}
+            <div className="shrink-0 flex items-center justify-between px-5 h-14 border-b border-zinc-100 dark:border-zinc-800">
+              <button
+                onClick={() => { setShowBulk(false); setBulkText(''); }}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-start text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 className="font-bold text-zinc-900 dark:text-white text-[15px]">스레드 일괄 입력</h2>
+              <button
+                onClick={handleBulkSubmit}
+                disabled={bulkSubmitting || parseBulkThread(bulkText).length === 0}
+                className="text-sky-500 font-bold text-[15px] disabled:opacity-40 min-h-[44px] px-1 transition hover:text-sky-400"
+              >
+                {bulkSubmitting ? '...' : `${parseBulkThread(bulkText).length || ''}게시`}
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              <p className="px-5 pt-4 pb-2 text-[13px] text-zinc-400 dark:text-zinc-500">
+                트위터 스레드를 그대로 붙여넣으면 트윗별로 나눠서 등록해요.
+              </p>
+              <textarea
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder={'진진\n@jin0_ojin\n·\nNov 5, 2025\n후기 내용...'}
+                className="flex-1 w-full px-5 py-3 bg-transparent text-zinc-900 dark:text-white text-sm resize-none outline-none min-h-[160px] border-t border-zinc-100 dark:border-zinc-800"
+              />
+              {bulkText.trim() && (() => {
+                const parsed = parseBulkThread(bulkText);
+                return parsed.length > 0 ? (
+                  <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">{parsed.length}개 항목 인식됨</p>
+                    <div className="flex flex-col gap-1.5">
+                      {parsed.map((e, i) => (
+                        <p key={i} className="text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 rounded-xl px-3 py-2 whitespace-pre-wrap line-clamp-2">
+                          {e}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
+                    헤더(이름 / @핸들 / · / 날짜)를 인식하지 못했어요. 트위터에서 복사한 텍스트를 그대로 붙여넣어보세요.
+                  </p>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isOwner && (
+        <div className="px-4">
+          {/* Thread connector from last review */}
+          <div className="flex gap-3">
+            <div className="w-10 flex justify-center">
+              <div className="w-0.5 h-3 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          </div>
+
+          {/* Compose row — avatar + textarea */}
+          <div className="flex gap-3 pt-1">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white text-lg shrink-0 shadow-sm">
+              🎭
+            </div>
+
+            <div className="flex-1 min-w-0 pt-1.5">
               <textarea
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => { setContent(e.target.value); autoResize(); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    if (hasContent) handleSubmit(e as unknown as React.FormEvent);
-                  }
-                }}
+                onFocus={() => window.dispatchEvent(new CustomEvent('compose-keyboard-open'))}
+                onBlur={() => window.dispatchEvent(new CustomEvent('compose-keyboard-close'))}
+                enterKeyHint="enter"
                 placeholder={reviews.length === 0 ? '첫 번째 후기를 남겨보세요...' : '스레드에 추가...'}
-                rows={1}
-                className="flex-1 bg-transparent outline-none text-white text-[15px] placeholder-zinc-600 resize-none leading-normal max-h-32 overflow-y-auto py-2"
+                rows={2}
+                className="w-full bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 resize-none leading-relaxed text-[17px]"
               />
+
+              {pendingImages.length > 0 && (
+                <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                  {pendingImages.map((url, i) => (
+                    <div key={i} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                      <Image src={url} alt="" fill className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-white text-xs"
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action bar — media buttons left, 게시 button right */}
+          <div className="flex gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-900">
+            <div className="w-10 shrink-0" />
+            <div className="flex items-center flex-1 gap-0.5">
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="text-sky-400 hover:bg-sky-400/10 rounded-full w-9 h-9 flex items-center justify-center transition shrink-0"
+                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition"
                 aria-label="사진 첨부"
               >
                 {uploading ? (
@@ -275,17 +434,33 @@ export default function ReviewThread({ postId, isOwner }: Props) {
                   </svg>
                 )}
               </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
+
               <button
+                type="button"
+                onClick={() => setShowBulk(true)}
+                className="text-sky-500 hover:bg-sky-500/10 rounded-full w-9 h-9 flex items-center justify-center transition"
+                aria-label="일괄 입력"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+              </button>
+
+              <div className="flex-1" />
+
+              <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={submitting || !hasContent}
-                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-4 py-1.5 text-sm transition shrink-0"
+                className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 disabled:opacity-40 text-white font-bold rounded-full px-5 py-2 text-[15px] transition"
               >
                 {submitting ? '...' : '게시'}
               </button>
             </div>
-            <div className="pb-safe" />
           </div>
+
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
         </div>
       )}
     </div>

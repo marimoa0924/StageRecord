@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -7,25 +9,43 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  background: #ffffff;
+  color: #18181b;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Prevent iOS auto-zoom on input focus (font-size must be ≥ 16px) */
+input, textarea, select {
+  font-size: 16px;
+  touch-action: manipulation;
+}
+
+html.dark body {
   background: #000;
   color: #e7e9ea;
-  overscroll-behavior-y: none;
-  -webkit-font-smoothing: antialiased;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+html.dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
-::-webkit-scrollbar {
-  width: 4px;
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
-  border-radius: 2px;
+::-webkit-scrollbar {
+  display: none;
 }
 
 .pb-safe {
@@ -36,5 +56,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   transition: background-color 0.12s ease;
 }
 .feed-card:active {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+html.dark .feed-card:active {
   background-color: rgba(255, 255, 255, 0.03);
 }

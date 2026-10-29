@@ -1,5 +1,6 @@
 // 캐스팅보드 이미지 → 출연 배우 이름 추출 (Gemini 비전, REST 호출). 단건·일괄 공용
-const MODEL = 'gemini-2.0-flash';
+// 모델은 자주 폐기되므로 GEMINI_MODEL env로 교체 가능
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 
 const PROMPT =
   '이 공연 캐스팅보드 이미지에서 출연 배우의 사람 이름만 뽑아 JSON 문자열 배열로 반환해. ' +

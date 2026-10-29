@@ -136,7 +136,7 @@ export default function Home() {
 
       {/* Sort tabs */}
       <div className="flex border-b border-zinc-200/80 dark:border-zinc-800/60">
-        {(['upload', 'date'] as const).map((key) => {
+        {(['date', 'upload'] as const).map((key) => {
           const label = key === 'upload' ? '업로드순' : '관람일순';
           const active = sort === key;
           return (

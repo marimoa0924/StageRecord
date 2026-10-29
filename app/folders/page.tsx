@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useOwner } from '@/lib/useOwner';
 
 interface FolderRow {
   folder_name: string;
@@ -8,6 +9,34 @@ interface FolderRow {
   max_viewing: number;
   first_date: string;
   latest_date: string;
+  emoji?: string | null;
+}
+
+// 소유자는 이모지를 클릭해 직접 입력으로 변경 (카드가 Link라 prompt로 처리)
+function FolderEmoji({ name, initial, editable }: { name: string; initial: string; editable: boolean }) {
+  const [emoji, setEmoji] = useState(initial);
+  if (!editable) return <span>{emoji}</span>;
+  return (
+    <button
+      type="button"
+      title="클릭하여 이모지 변경"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = window.prompt('새 이모지를 입력하세요', emoji)?.trim();
+        if (!next || next === emoji) return;
+        setEmoji(next);
+        fetch(`/api/folders/${encodeURIComponent(name)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emoji: next }),
+        }).catch(() => {});
+      }}
+      className="leading-none hover:scale-110 transition cursor-pointer"
+    >
+      {emoji}
+    </button>
+  );
 }
 
 interface FoldersData {
@@ -48,6 +77,7 @@ function FolderCard({ href, icon, title, sub, meta }: {
 }
 
 export default function FoldersPage() {
+  const { isOwner } = useOwner();
   const [data, setData] = useState<FoldersData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -105,7 +135,7 @@ export default function FoldersPage() {
               <FolderCard
                 key={folder.folder_name}
                 href={`/folders/${encodeURIComponent(folder.folder_name)}`}
-                icon="🎭"
+                icon={<FolderEmoji name={folder.folder_name} initial={folder.emoji ?? '🎭'} editable={isOwner} />}
                 title={folder.folder_name}
                 sub={`${folder.post_count}번 관람 · 최근 ${folder.max_viewing}회차`}
                 meta={

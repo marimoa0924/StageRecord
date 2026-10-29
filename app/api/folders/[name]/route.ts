@@ -2,8 +2,33 @@ import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ready } from '@/lib/db';
 import { auth } from '@/auth';
+import { requireOwner } from '@/lib/requireOwner';
 
 const CHIKMUK = '찍먹극';
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
+  try {
+    const check = await requireOwner();
+    if ('error' in check) return check.error;
+
+    await ready;
+    const { name } = await params;
+    const folder = decodeURIComponent(name);
+    const { emoji } = await req.json();
+    if (typeof emoji !== 'string' || emoji.trim().length === 0 || emoji.length > 16) {
+      return NextResponse.json({ error: '이모지를 확인해주세요.' }, { status: 400 });
+    }
+
+    await sql`
+      INSERT INTO folder_emojis (name, emoji) VALUES (${folder}, ${emoji.trim()})
+      ON CONFLICT (name) DO UPDATE SET emoji = EXCLUDED.emoji
+    `;
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    logger.error('[PATCH /api/folders/[name]]', e);
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+  }
+}
 
 export async function GET(
   req: NextRequest,

@@ -7,6 +7,7 @@ interface FolderRow {
   folder_name: string;
   post_count: number;
   max_viewing: number;
+  emoji?: string | null;
 }
 
 interface Stats {
@@ -86,7 +87,7 @@ export default function RightPanel() {
               href={`/folders/${encodeURIComponent(f.folder_name)}`}
               className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-100 dark:hover:bg-white/[0.03] transition"
             >
-              <span className="text-lg shrink-0">🎭</span>
+              <span className="text-lg shrink-0">{f.emoji ?? '🎭'}</span>
               <span className="flex-1 min-w-0">
                 <span className="block text-zinc-900 dark:text-white font-semibold text-[14px] truncate">{f.folder_name}</span>
                 <span className="block text-zinc-500 text-[12px]">{f.post_count}번 관람 · 최근 {f.max_viewing}회차</span>

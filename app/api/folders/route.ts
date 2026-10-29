@@ -18,14 +18,16 @@ export async function GET() {
         FROM posts
       )
       SELECT
-        folder_name,
+        fn.folder_name,
         COUNT(*)::int           AS post_count,
-        MAX(viewing_count)::int AS max_viewing,
-        MIN(performance_date)   AS first_date,
-        MAX(performance_date)   AS latest_date
+        MAX(fn.viewing_count)::int AS max_viewing,
+        MIN(fn.performance_date)   AS first_date,
+        MAX(fn.performance_date)   AS latest_date,
+        MAX(fe.emoji)           AS emoji
       FROM fn
-      GROUP BY folder_name
-      ORDER BY MAX(performance_date) DESC
+      LEFT JOIN folder_emojis fe ON fe.name = fn.folder_name
+      GROUP BY fn.folder_name
+      ORDER BY MAX(fn.performance_date) DESC
     `;
 
     const chikmuk = rows.filter((r) => (r.post_count as number) === 1);

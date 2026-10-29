@@ -55,6 +55,15 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(review_id, visitor_id)
         )
       `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS folder_emojis (
+          name  TEXT PRIMARY KEY,
+          emoji TEXT NOT NULL
+        )
+      `;
+      // posts 추가 필드: 가격(원), 배우 태그(JSON 배열) — 기존 행은 NULL/'[]'
+      await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS price INTEGER`;
+      await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS actors TEXT NOT NULL DEFAULT '[]'`;
       // 제목 → 작품명 추출 (날짜 단어 + 공연유형/회차 접미사 제거). folders 쿼리들이 공용으로 사용
       await sql`
         CREATE OR REPLACE FUNCTION show_name(raw TEXT) RETURNS TEXT AS $$

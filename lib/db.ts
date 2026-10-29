@@ -34,6 +34,18 @@ export const ready: Promise<void> = DATABASE_URL
           UNIQUE(post_id, visitor_id)
         )
       `;
+      // 기존 배포는 likes가 ip_address 컬럼으로 이미 존재 → visitor_id로 개명 (데이터·UNIQUE 유지)
+      await sql`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'likes' AND column_name = 'ip_address'
+          ) THEN
+            ALTER TABLE likes RENAME COLUMN ip_address TO visitor_id;
+          END IF;
+        END $$;
+      `;
       await sql`
         CREATE TABLE IF NOT EXISTS review_likes (
           id         SERIAL PRIMARY KEY,

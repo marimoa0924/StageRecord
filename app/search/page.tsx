@@ -150,28 +150,43 @@ function SearchResultCard({ post, query }: { post: SearchPost; query: string }) 
   );
 }
 
+// 스레드 → 뒤로가기 시 검색 결과·스크롤을 유지하기 위한 세션 캐시 (새로고침하면 초기화됨)
+let searchCache: { q: string; results: SearchPost[] } | null = null;
+let searchScroll = 0;
+
 function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQ = searchParams.get('q') ?? '';
 
   const [query, setQuery] = useState(initialQ);
-  const [results, setResults] = useState<SearchPost[]>([]);
+  const [results, setResults] = useState<SearchPost[]>(
+    searchCache && searchCache.q === initialQ ? searchCache.results : [],
+  );
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(!!(initialQ && searchCache && searchCache.q === initialQ));
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  // 검색어를 URL(?q=)에 반영 → 스레드를 보고 뒤로 와도 검색어·결과가 복원됨
+  useEffect(() => {
+    const q = query.trim();
+    router.replace(q ? `/search?q=${encodeURIComponent(q)}` : '/search', { scroll: false });
+  }, [query, router]);
+
   useEffect(() => {
     const q = query.trim();
     if (!q) { setResults([]); setSearched(false); setLoading(false); return; }
-    setLoading(true);
+    // 캐시된 결과가 있으면 스켈레톤 없이 조용히 갱신
+    if (!(searchCache && searchCache.q === q)) setLoading(true);
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
-        setResults(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setResults(list);
+        searchCache = { q, results: list };
       } catch {
         setResults([]);
       } finally {
@@ -181,6 +196,18 @@ function SearchContent() {
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
+
+  // 뒤로가기 복원: 캐시된 결과가 즉시 렌더되므로 저장한 스크롤로 복원
+  useEffect(() => {
+    if (searchScroll > 0 && results.length > 0) {
+      const y = searchScroll;
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    }
+    const onScroll = () => { searchScroll = window.scrollY; };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">

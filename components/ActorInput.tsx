@@ -30,6 +30,7 @@ export default function ActorInput({ value, onChange }: { value: string[]; onCha
         </span>
       ))}
       <input
+        key="actor-text-input"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {

@@ -19,7 +19,7 @@ interface Post {
 
 // 스레드 → 뒤로가기 시 목록·스크롤을 유지하기 위한 세션 캐시 (새로고침하면 초기화됨)
 let cachedPosts: Post[] | null = null;
-let cachedSort: 'upload' | 'date' = 'upload';
+let cachedSort: 'upload' | 'date' = 'date';
 let cachedScroll = 0;
 
 export default function Home() {

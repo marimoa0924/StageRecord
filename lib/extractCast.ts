@@ -25,7 +25,10 @@ export async function extractCastFromImage(url: string): Promise<string[]> {
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini 오류 ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Gemini ${res.status}: ${body.slice(0, 300)}`);
+  }
 
   const json = await res.json();
   const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? '[]';

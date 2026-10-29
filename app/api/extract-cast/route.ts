@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ actors });
   } catch (e) {
     logger.error('[POST /api/extract-cast]', e);
-    return NextResponse.json({ error: '배우 추출 중 오류가 발생했습니다.' }, { status: 500 });
+    // owner 전용 라우트라 실제 원인을 노출해 진단을 돕는다
+    const msg = e instanceof Error ? e.message : '배우 추출 중 오류가 발생했습니다.';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

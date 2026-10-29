@@ -33,6 +33,7 @@ export default function ActorInput({ value, onChange }: { value: string[]; onCha
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing) return; // 한글 조합 중이면 IME에 맡김 (Enter 가로채면 영어로 리셋됨)
           if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(text); }
           else if (e.key === 'Backspace' && !text && value.length) onChange(value.slice(0, -1));
         }}

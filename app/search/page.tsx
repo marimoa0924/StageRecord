@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useOwner } from '@/lib/useOwner';
+import { restoreScroll } from '@/lib/scrollRestore';
 
 interface MatchingReview {
   id: number;
@@ -197,17 +198,9 @@ function SearchContent() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // 뒤로가기 복원: 캐시된 결과가 즉시 렌더됨. instant로 몇 프레임 복원 (smooth·Next 리셋 극복)
+  // 뒤로가기 복원: 캐시된 결과가 즉시 렌더됨 → 저장한 위치로 복원
   useEffect(() => {
-    const y = results.length > 0 ? searchScroll : 0;
-    if (y > 0) {
-      let n = 0;
-      const restore = () => {
-        window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
-        if (++n < 5) requestAnimationFrame(restore);
-      };
-      requestAnimationFrame(restore);
-    }
+    if (results.length > 0) restoreScroll(searchScroll);
     const onScroll = () => { searchScroll = window.scrollY; };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);

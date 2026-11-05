@@ -21,14 +21,14 @@ export default function Home() {
   const { isOwner, user, loading: authLoading } = useOwner();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<'upload' | 'date'>('date');
+  const [sort, setSort] = useState<'upload' | 'date' | 'old'>('date');
   const [refreshing, setRefreshing] = useState(false);
   const [pullProgress, setPullProgress] = useState(0); // 0→1 while pulling
   const rafId = useRef<number>(0);
 
   const fetchPosts = useCallback(async (currentSort = sort) => {
     try {
-      const res = await fetch(`/api/posts${currentSort === 'date' ? '?sort=date' : ''}`);
+      const res = await fetch(`/api/posts${currentSort === 'upload' ? '' : `?sort=${currentSort}`}`);
       const data = await res.json();
       setPosts(Array.isArray(data) ? data : []);
     } catch {
@@ -117,8 +117,8 @@ export default function Home() {
 
       {/* Sort tabs */}
       <div className="flex border-b border-zinc-200/80 dark:border-zinc-800/60">
-        {(['date', 'upload'] as const).map((key) => {
-          const label = key === 'upload' ? '업로드순' : '관람일순';
+        {(['date', 'old', 'upload'] as const).map((key) => {
+          const label = { date: '관람일순', old: '오래된순', upload: '업로드순' }[key];
           const active = sort === key;
           return (
             <button

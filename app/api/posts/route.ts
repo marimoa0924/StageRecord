@@ -22,33 +22,27 @@ export async function GET(req: NextRequest) {
     const likeId = session?.user?.email ?? '__no_match__';
 
     const sortParam = req.nextUrl.searchParams.get('sort');
-    const byDate = sortParam === 'date';
 
-    const posts = byDate
-      ? await sql`
-          SELECT
-            p.*,
-            COUNT(DISTINCT r.id)::int   AS review_count,
-            COUNT(DISTINCT l.id)::int   AS like_count,
-            MAX(CASE WHEN l.visitor_id = ${likeId} THEN 1 ELSE 0 END) AS liked_by_me
-          FROM posts p
-          LEFT JOIN reviews r ON r.post_id = p.id
-          LEFT JOIN likes   l ON l.post_id = p.id
-          GROUP BY p.id
-          ORDER BY p.performance_date DESC, p.created_at DESC
-        `
-      : await sql`
-          SELECT
-            p.*,
-            COUNT(DISTINCT r.id)::int   AS review_count,
-            COUNT(DISTINCT l.id)::int   AS like_count,
-            MAX(CASE WHEN l.visitor_id = ${likeId} THEN 1 ELSE 0 END) AS liked_by_me
-          FROM posts p
-          LEFT JOIN reviews r ON r.post_id = p.id
-          LEFT JOIN likes   l ON l.post_id = p.id
-          GROUP BY p.id
-          ORDER BY p.created_at DESC
-        `;
+    const posts = await sql`
+      SELECT
+        p.*,
+        COUNT(DISTINCT r.id)::int   AS review_count,
+        COUNT(DISTINCT l.id)::int   AS like_count,
+        MAX(CASE WHEN l.visitor_id = ${likeId} THEN 1 ELSE 0 END) AS liked_by_me
+      FROM posts p
+      LEFT JOIN reviews r ON r.post_id = p.id
+      LEFT JOIN likes   l ON l.post_id = p.id
+      GROUP BY p.id
+    `;
+
+    const cmp = (x: unknown, y: unknown) => String(x).localeCompare(String(y));
+    if (sortParam === 'date') {
+      posts.sort((a, b) => cmp(b.performance_date, a.performance_date) || cmp(b.created_at, a.created_at));
+    } else if (sortParam === 'old') {
+      posts.sort((a, b) => cmp(a.performance_date, b.performance_date) || cmp(a.created_at, b.created_at));
+    } else {
+      posts.sort((a, b) => cmp(b.created_at, a.created_at)); // 업로드순(최신)
+    }
 
     return NextResponse.json(posts);
   } catch (e) {

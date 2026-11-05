@@ -141,6 +141,9 @@ export default function StatsPage() {
                 {!batch.running && batch.done > 0 && (
                   <p className="text-emerald-600 dark:text-emerald-400 text-[13px] mt-2">완료 — {batch.done}개 기록에 배우를 채웠어요.</p>
                 )}
+                <Link href="/incomplete" className="block mt-3 text-sky-500 hover:text-sky-400 text-[13px]">
+                  가격·배우 미입력 기록 보기 →
+                </Link>
               </section>
             )}
 

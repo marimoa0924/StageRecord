@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import ActorInput from '@/components/ActorInput';
 import ScanCastButton from '@/components/ScanCastButton';
+import { priceLooksWrong } from '@/lib/postFields';
 
 interface Props {
   onClose: () => void;
@@ -49,6 +50,8 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
 
   async function submit() {
     if (!title || !date) return;
+    const priceVal = price === '' ? null : Number(price);
+    if (priceLooksWrong(priceVal) && !confirm(`가격 ${priceVal?.toLocaleString('ko-KR')}원이 100원 단위가 아니에요. 잘못 입력한 게 아닌가요?\n그대로 저장할까요?`)) return;
     setSubmitting(true);
     await fetch('/api/posts', {
       method: 'POST',
@@ -58,7 +61,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
         performance_date: date,
         viewing_count: viewingCount,
         casting_board: imageUrl || null,
-        price: price === '' ? null : Number(price),
+        price: priceVal,
         actors,
       }),
     });

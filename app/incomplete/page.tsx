@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import PostCard from '@/components/PostCard';
 import { useOwner } from '@/lib/useOwner';
+import { priceLooksWrong } from '@/lib/postFields';
 
 interface Post {
   id: number;
@@ -18,8 +19,7 @@ interface Post {
   actors?: string;
 }
 
-// 가격이 없거나 배우가 비어있는 기록 (둘 중 하나라도 미입력)
-function isIncomplete(p: Post) {
+function isMissing(p: Post) {
   return p.price == null || !p.actors || p.actors === '[]';
 }
 
@@ -33,7 +33,7 @@ export default function IncompletePage() {
     try {
       const res = await fetch('/api/posts');
       const data = await res.json();
-      setPosts(Array.isArray(data) ? data.filter(isIncomplete) : []);
+      setPosts(Array.isArray(data) ? data : []);
     } catch {
       setPosts([]);
     } finally {
@@ -42,6 +42,10 @@ export default function IncompletePage() {
   }, []);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  const badPrice = posts.filter((p) => priceLooksWrong(p.price ?? null));
+  const missing = posts.filter(isMissing);
+  const nothing = !loading && badPrice.length === 0 && missing.length === 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -54,10 +58,7 @@ export default function IncompletePage() {
             <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
           </svg>
         </button>
-        <h1 className="text-zinc-900 dark:text-white font-bold text-[17px]">가격·배우 미입력</h1>
-        {!loading && posts.length > 0 && (
-          <span className="ml-auto text-zinc-400 dark:text-zinc-600 text-sm shrink-0">{posts.length}개</span>
-        )}
+        <h1 className="text-zinc-900 dark:text-white font-bold text-[17px]">점검 필요</h1>
       </header>
 
       <main className="flex-1">
@@ -75,16 +76,34 @@ export default function IncompletePage() {
           </div>
         )}
 
-        {!loading && posts.length === 0 && (
+        {nothing && (
           <div className="flex flex-col items-center justify-center py-28 gap-3">
             <div className="text-5xl">✅</div>
-            <p className="text-zinc-600 dark:text-zinc-400 font-semibold">모든 기록에 가격·배우가 입력됐어요</p>
+            <p className="text-zinc-600 dark:text-zinc-400 font-semibold">점검할 기록이 없어요</p>
           </div>
         )}
 
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} isOwner={isOwner} onDelete={fetchPosts} />
-        ))}
+        {!loading && badPrice.length > 0 && (
+          <>
+            <h2 className="px-4 pt-4 pb-1 text-amber-600 dark:text-amber-400 font-bold text-sm">
+              가격 오입력 (100원 단위 아님) · {badPrice.length}개
+            </h2>
+            {badPrice.map((post) => (
+              <PostCard key={post.id} post={post} isOwner={isOwner} onDelete={fetchPosts} />
+            ))}
+          </>
+        )}
+
+        {!loading && missing.length > 0 && (
+          <>
+            <h2 className="px-4 pt-4 pb-1 text-zinc-500 dark:text-zinc-400 font-bold text-sm">
+              가격·배우 미입력 · {missing.length}개
+            </h2>
+            {missing.map((post) => (
+              <PostCard key={post.id} post={post} isOwner={isOwner} onDelete={fetchPosts} />
+            ))}
+          </>
+        )}
       </main>
     </div>
   );

@@ -1,3 +1,8 @@
+// 가격이 100원 단위가 아니면(끝 두 자리 ≠ 00) 오입력 가능성이 높음
+export function priceLooksWrong(price: number | null | undefined): boolean {
+  return price != null && price % 100 !== 0;
+}
+
 // 가격(원)·배우 태그 입력 검증/정규화 — 생성(POST)·수정(PATCH) 공용
 export function parsePriceActors(
   price: unknown,

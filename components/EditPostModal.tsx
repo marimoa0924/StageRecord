@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import ActorInput from '@/components/ActorInput';
 import ScanCastButton from '@/components/ScanCastButton';
+import { priceLooksWrong } from '@/lib/postFields';
 
 export interface EditableFields {
   id: number;
@@ -41,6 +42,8 @@ export default function EditPostModal({
 
   async function save() {
     if (!date || !changed) return;
+    const priceVal = price === '' ? null : Number(price);
+    if (priceLooksWrong(priceVal) && !confirm(`가격 ${priceVal?.toLocaleString('ko-KR')}원이 100원 단위가 아니에요. 잘못 입력한 게 아닌가요?\n그대로 저장할까요?`)) return;
     setSaving(true);
     const res = await fetch(`/api/posts/${post.id}`, {
       method: 'PATCH',
@@ -48,7 +51,7 @@ export default function EditPostModal({
       body: JSON.stringify({
         performance_date: date,
         viewing_count: viewingCount,
-        price: price === '' ? null : Number(price),
+        price: priceVal,
         actors,
       }),
     });

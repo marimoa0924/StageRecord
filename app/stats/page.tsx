@@ -186,6 +186,9 @@ export default function StatsPage() {
                 {s.top_actors.map((row) => (
                   <BarRow key={row.name} label={row.name} value={row.count} max={maxActor} unit="회" />
                 ))}
+                <Link href="/actors" className="block mt-2 text-sky-500 hover:text-sky-400 text-[13px]">
+                  배우 전체 보기 →
+                </Link>
               </Card>
             )}
 
@@ -235,7 +238,6 @@ export default function StatsPage() {
                   {s.price.max != null && (
                     <Stat label="최고가" value={`₩${s.price.max.toLocaleString('ko-KR')}`} sub={s.price.max_title ?? undefined} />
                   )}
-                  <Stat label="가격 입력된 기록" value={`${s.price.priced}개`} />
                 </div>
               </Card>
             )}

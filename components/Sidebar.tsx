@@ -82,6 +82,16 @@ export default function Sidebar({ onNewPost }: Props) {
           }
           label="결산"
         />
+        <SideNavItem
+          href="/actors"
+          active={pathname === '/actors'}
+          icon={
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={pathname === '/actors' ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M9 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          }
+          label="배우"
+        />
         <button
           onClick={toggle}
           className="flex items-center gap-4 px-3 py-3 rounded-2xl transition text-[17px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900/60 font-medium"

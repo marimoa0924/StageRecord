@@ -87,6 +87,7 @@ export default function Home() {
       pulling = false;
       const dy = lastDy;
       lastDy = 0;
+      cancelAnimationFrame(rafId.current); // 손 뗀 뒤 늦은 rAF가 pullProgress를 되살려 화살표가 멈추는 것 방지
       setPullProgress(0);
       if (dy >= THRESHOLD) {
         setRefreshing(true);

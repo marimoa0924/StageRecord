@@ -122,11 +122,10 @@ export default function EditPostModal({
           <div>
             <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">관람 가격 (원)</label>
             <input
-              type="number"
+              type="text"
               inputMode="numeric"
-              min={0}
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => setPrice(e.target.value.replace(/[^0-9]/g, ''))}
               placeholder="예: 140000 (선택)"
               className="w-full h-[46px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-sky-500 transition"
             />

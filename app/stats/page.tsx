@@ -18,7 +18,7 @@ interface Stats {
   unique_actors: number;
   first_show: string | null;
   latest_show: string | null;
-  price: { priced: number; total: number; avg: number; max: number | null; max_title: string | null; min: number | null; min_title: string | null };
+  price: { priced: number; total: number; avg: number; max: number | null; max_title: string | null };
   top_actors: NamedCount[];
   total_reviews: number;
   review_chars: number;
@@ -234,9 +234,6 @@ export default function StatsPage() {
                   <Stat label="평균 티켓가" value={`₩${s.price.avg.toLocaleString('ko-KR')}`} />
                   {s.price.max != null && (
                     <Stat label="최고가" value={`₩${s.price.max.toLocaleString('ko-KR')}`} sub={s.price.max_title ?? undefined} />
-                  )}
-                  {s.price.min != null && (
-                    <Stat label="최저가" value={`₩${s.price.min.toLocaleString('ko-KR')}`} sub={s.price.min_title ?? undefined} />
                   )}
                   <Stat label="가격 입력된 기록" value={`${s.price.priced}개`} />
                 </div>

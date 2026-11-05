@@ -29,17 +29,12 @@ export async function GET() {
       SELECT COUNT(price)::int           AS priced,
              COALESCE(SUM(price), 0)::int AS total,
              COALESCE(AVG(price), 0)::int AS avg,
-             MAX(price)::int             AS max,
-             MIN(price)::int             AS min
+             MAX(price)::int             AS max
       FROM posts
     `;
     const [maxPriceShow] =
       price.max != null
         ? await sql`SELECT title FROM posts WHERE price = ${price.max} ORDER BY performance_date DESC LIMIT 1`
-        : [undefined];
-    const [minPriceShow] =
-      price.min != null
-        ? await sql`SELECT title FROM posts WHERE price = ${price.min} ORDER BY performance_date DESC LIMIT 1`
         : [undefined];
 
     const topActors = await sql`
@@ -86,7 +81,7 @@ export async function GET() {
       unique_actors: actorSet.size,
       first_show: rows[0]?.title ?? null,
       latest_show: rows[rows.length - 1]?.title ?? null,
-      price: { ...price, max_title: maxPriceShow?.title ?? null, min_title: minPriceShow?.title ?? null },
+      price: { ...price, max_title: maxPriceShow?.title ?? null },
       top_actors: topActors,
       total_reviews,
       review_chars,

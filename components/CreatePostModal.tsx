@@ -18,11 +18,10 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function uploadFile(file: File) {
     setUploading(true);
     const fd = new FormData();
     fd.append('file', file);
@@ -34,6 +33,18 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
       alert(`업로드 실패: ${data.error ?? '알 수 없는 오류'}`);
     }
     setUploading(false);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) uploadFile(file);
   }
 
   async function submit() {
@@ -156,8 +167,15 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
             <div>
               <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">캐스팅보드</label>
               <div
-                className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 border-dashed rounded-xl cursor-pointer hover:border-sky-500 transition overflow-hidden"
+                className={`w-full border border-dashed rounded-xl cursor-pointer transition overflow-hidden ${
+                  dragging
+                    ? 'border-sky-500 bg-sky-50 dark:bg-sky-500/10'
+                    : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-sky-500'
+                }`}
                 onClick={() => fileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
               >
                 {imageUrl ? (
                   <div className="relative w-full aspect-video">
@@ -172,7 +190,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    <span className="text-sm">{uploading ? '업로드 중...' : '탭하여 사진 업로드'}</span>
+                    <span className="text-sm">{uploading ? '업로드 중...' : '탭하거나 드래그하여 업로드'}</span>
                   </div>
                 )}
               </div>

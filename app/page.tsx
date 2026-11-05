@@ -20,21 +20,21 @@ interface Post {
 
 // 스레드 → 뒤로가기 시 목록·정렬·스크롤을 유지하기 위한 세션 캐시 (새로고침하면 초기화됨)
 let cachedPosts: Post[] | null = null;
-let cachedSort: 'upload' | 'date' | 'old' = 'date';
+let cachedSort: 'date' | 'old' = 'date';
 let cachedScroll = 0;
 
 export default function Home() {
   const { isOwner, user, loading: authLoading } = useOwner();
   const [posts, setPosts] = useState<Post[]>(cachedPosts ?? []);
   const [loading, setLoading] = useState(cachedPosts === null);
-  const [sort, setSort] = useState<'upload' | 'date' | 'old'>(cachedSort);
+  const [sort, setSort] = useState<'date' | 'old'>(cachedSort);
   const [refreshing, setRefreshing] = useState(false);
   const [pullProgress, setPullProgress] = useState(0); // 0→1 while pulling
   const rafId = useRef<number>(0);
 
   const fetchPosts = useCallback(async (currentSort = sort) => {
     try {
-      const res = await fetch(`/api/posts${currentSort === 'upload' ? '' : `?sort=${currentSort}`}`);
+      const res = await fetch(`/api/posts?sort=${currentSort}`);
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       setPosts(list);
@@ -132,28 +132,18 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Sort tabs */}
-      <div className="flex border-b border-zinc-200/80 dark:border-zinc-800/60">
-        {(['date', 'old', 'upload'] as const).map((key) => {
-          const label = { date: '관람일순', old: '오래된순', upload: '업로드순' }[key];
-          const active = sort === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setSort(key)}
-              className={`flex-1 py-2.5 text-sm font-medium transition relative ${
-                active
-                  ? 'text-zinc-900 dark:text-white'
-                  : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
-              }`}
-            >
-              {label}
-              {active && (
-                <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-sky-500 rounded-full" />
-              )}
-            </button>
-          );
-        })}
+      {/* 관람일순 — 최신/오래된 토글 */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200/80 dark:border-zinc-800/60">
+        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">관람일순</span>
+        <button
+          onClick={() => setSort((s) => (s === 'date' ? 'old' : 'date'))}
+          className="flex items-center gap-1.5 text-sm font-semibold text-sky-500 hover:text-sky-400 transition min-h-[36px] px-1"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M6 12h12M10 18h4"/>
+          </svg>
+          {sort === 'date' ? '최신순' : '오래된순'}
+        </button>
       </div>
 
       <main className="flex-1">

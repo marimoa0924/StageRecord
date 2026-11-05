@@ -59,7 +59,7 @@ export default function ActorsPage() {
 
   // ── 배우 상세: 극 이름 + 날짜만, 클릭 시 스레드로 ──
   if (selected) {
-    const list = (actorMap.get(selected) ?? []).slice().sort((a, b) => b.performance_date.localeCompare(a.performance_date));
+    const list = (actorMap.get(selected) ?? []).slice().sort((a, b) => a.performance_date.localeCompare(b.performance_date));
     return (
       <div className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 h-14 flex items-center gap-2">

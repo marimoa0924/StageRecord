@@ -29,12 +29,17 @@ export async function GET() {
       SELECT COUNT(price)::int           AS priced,
              COALESCE(SUM(price), 0)::int AS total,
              COALESCE(AVG(price), 0)::int AS avg,
-             MAX(price)::int             AS max
+             MAX(price)::int             AS max,
+             MIN(price)::int             AS min
       FROM posts
     `;
     const [maxPriceShow] =
       price.max != null
         ? await sql`SELECT title FROM posts WHERE price = ${price.max} ORDER BY performance_date DESC LIMIT 1`
+        : [undefined];
+    const [minPriceShow] =
+      price.min != null
+        ? await sql`SELECT title FROM posts WHERE price = ${price.min} ORDER BY performance_date DESC LIMIT 1`
         : [undefined];
 
     const topActors = await sql`
@@ -44,6 +49,29 @@ export async function GET() {
     `;
 
     const [{ total_reviews }] = await sql`SELECT COUNT(*)::int AS total_reviews FROM reviews`;
+    const [{ review_chars }] = await sql`SELECT COALESCE(SUM(length(content)), 0)::int AS review_chars FROM reviews`;
+    const [mostReviewed] = await sql`
+      SELECT p.title, COUNT(r.id)::int AS count
+      FROM posts p JOIN reviews r ON r.post_id = p.id
+      GROUP BY p.id ORDER BY count DESC, p.id LIMIT 1
+    `;
+
+    // 날짜·배우 기반 통계는 JS로 집계
+    const rows = await sql`SELECT title, performance_date, actors FROM posts ORDER BY performance_date ASC`;
+    const byWeekday = [0, 0, 0, 0, 0, 0, 0]; // 0=일 … 6=토
+    const yearMap = new Map<string, number>();
+    const dayMap = new Map<string, number>();
+    const actorSet = new Set<string>();
+    for (const r of rows) {
+      const pd = String(r.performance_date);
+      byWeekday[new Date(pd + 'T00:00:00').getDay()]++;
+      yearMap.set(pd.slice(0, 4), (yearMap.get(pd.slice(0, 4)) ?? 0) + 1);
+      dayMap.set(pd, (dayMap.get(pd) ?? 0) + 1);
+      try { const a = JSON.parse(r.actors || '[]'); if (Array.isArray(a)) for (const x of a) actorSet.add(String(x)); } catch {}
+    }
+    const byYear = [...yearMap.entries()].sort().map(([year, count]) => ({ year, count }));
+    let busiest = { date: '', count: 0 };
+    for (const [date, count] of dayMap) if (count > busiest.count) busiest = { date, count };
 
     return NextResponse.json({
       total_shows: totals.total_shows,
@@ -52,9 +80,17 @@ export async function GET() {
       latest_date: totals.latest_date,
       top_shows: topShows,
       by_month: byMonth,
-      price: { ...price, max_title: maxPriceShow?.title ?? null },
+      by_year: byYear,
+      by_weekday: byWeekday,
+      busiest_day: busiest,
+      unique_actors: actorSet.size,
+      first_show: rows[0]?.title ?? null,
+      latest_show: rows[rows.length - 1]?.title ?? null,
+      price: { ...price, max_title: maxPriceShow?.title ?? null, min_title: minPriceShow?.title ?? null },
       top_actors: topActors,
       total_reviews,
+      review_chars,
+      most_reviewed: mostReviewed ?? null,
     });
   } catch (e) {
     logger.error('[GET /api/stats]', e);

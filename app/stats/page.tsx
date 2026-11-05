@@ -12,10 +12,20 @@ interface Stats {
   latest_date: string | null;
   top_shows: NamedCount[];
   by_month: { month: string; count: number }[];
-  price: { priced: number; total: number; avg: number; max: number | null; max_title: string | null };
+  by_year: { year: string; count: number }[];
+  by_weekday: number[];
+  busiest_day: { date: string; count: number };
+  unique_actors: number;
+  first_show: string | null;
+  latest_show: string | null;
+  price: { priced: number; total: number; avg: number; max: number | null; max_title: string | null; min: number | null; min_title: string | null };
   top_actors: NamedCount[];
   total_reviews: number;
+  review_chars: number;
+  most_reviewed: { title: string; count: number } | null;
 }
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function daysBetween(a: string, b: string) {
   return Math.round((new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000);
@@ -90,6 +100,8 @@ export default function StatsPage() {
   const maxShow = s?.top_shows[0]?.count ?? 0;
   const maxMonth = s ? Math.max(1, ...s.by_month.map((m) => m.count)) : 1;
   const maxActor = s?.top_actors[0]?.count ?? 0;
+  const maxWeekday = s ? Math.max(1, ...s.by_weekday) : 1;
+  const maxYear = s ? Math.max(1, ...s.by_year.map((y) => y.count)) : 1;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -177,6 +189,34 @@ export default function StatsPage() {
               </Card>
             )}
 
+            {/* 요일별 관람 */}
+            <Card title="요일별 관람">
+              {s.by_weekday.map((c, i) => (
+                <BarRow key={i} label={`${WEEKDAYS[i]}요일`} value={c} max={maxWeekday} unit="회" />
+              ))}
+            </Card>
+
+            {/* 연도별 관람 */}
+            {s.by_year.length > 1 && (
+              <Card title="연도별 관람">
+                {s.by_year.map((y) => (
+                  <BarRow key={y.year} label={`${y.year}년`} value={y.count} max={maxYear} unit="회" />
+                ))}
+              </Card>
+            )}
+
+            {/* 이모저모 */}
+            <Card title="이모저모">
+              <dl className="flex flex-col gap-2.5">
+                <HL label="무대에서 만난 배우" value={`${s.unique_actors.toLocaleString('ko-KR')}명`} />
+                {s.busiest_day.count > 1 && <HL label="하루 최다 관람" value={`${s.busiest_day.count}개`} sub={s.busiest_day.date} />}
+                {s.first_show && <HL label="처음 기록한 공연" value={s.first_show} />}
+                {s.latest_show && <HL label="가장 최근 공연" value={s.latest_show} />}
+                {s.most_reviewed && <HL label="후기 최다 작품" value={s.most_reviewed.title} sub={`후기 ${s.most_reviewed.count}개`} />}
+                <HL label="쓴 후기 글자 수" value={`${s.review_chars.toLocaleString('ko-KR')}자`} />
+              </dl>
+            </Card>
+
             {/* 월별 관람 */}
             {s.by_month.length > 0 && (
               <Card title="월별 관람">
@@ -195,6 +235,9 @@ export default function StatsPage() {
                   {s.price.max != null && (
                     <Stat label="최고가" value={`₩${s.price.max.toLocaleString('ko-KR')}`} sub={s.price.max_title ?? undefined} />
                   )}
+                  {s.price.min != null && (
+                    <Stat label="최저가" value={`₩${s.price.min.toLocaleString('ko-KR')}`} sub={s.price.min_title ?? undefined} />
+                  )}
                   <Stat label="가격 입력된 기록" value={`${s.price.priced}개`} />
                 </div>
               </Card>
@@ -206,6 +249,18 @@ export default function StatsPage() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function HL({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-zinc-500 dark:text-zinc-400 text-[13px] shrink-0">{label}</dt>
+      <dd className="text-right min-w-0">
+        <span className="block text-zinc-900 dark:text-white font-semibold text-[14px] truncate">{value}</span>
+        {sub && <span className="block text-zinc-400 dark:text-zinc-600 text-[12px]">{sub}</span>}
+      </dd>
     </div>
   );
 }

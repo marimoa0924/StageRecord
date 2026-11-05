@@ -146,7 +146,7 @@ export default function StatsPage() {
                   <BarRow key={row.name} label={row.name} value={row.count} max={maxActor} unit="회" />
                 ))}
                 <Link href="/actors" className="block mt-2 text-sky-500 hover:text-sky-400 text-[13px]">
-                  배우 전체 보기 →
+                  배우 검색 →
                 </Link>
               </Card>
             )}

@@ -1,20 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import PostCard from '@/components/PostCard';
-import { useOwner } from '@/lib/useOwner';
+import Link from 'next/link';
 
 interface Post {
   id: number;
   title: string;
   performance_date: string;
-  viewing_count: number;
-  casting_board: string | null;
-  created_at: string;
-  review_count: number;
-  like_count: number;
-  liked_by_me: number;
-  price?: number | null;
   actors?: string;
 }
 
@@ -22,9 +14,12 @@ function parseActors(raw?: string | null): string[] {
   try { const v = JSON.parse(raw || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
 }
 
+function formatDate(iso: string) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export default function ActorsPage() {
   const router = useRouter();
-  const { isOwner } = useOwner();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -44,7 +39,7 @@ export default function ActorsPage() {
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
-  // 배우 → 출연 기록 목록
+  // 배우 → 출연 기록
   const actorMap = useMemo(() => {
     const m = new Map<string, Post[]>();
     for (const p of posts) {
@@ -56,16 +51,15 @@ export default function ActorsPage() {
     return m;
   }, [posts]);
 
-  const names = useMemo(
-    () => [...actorMap.keys()].sort((a, b) => a.localeCompare(b, 'ko')),
-    [actorMap],
-  );
   const q = query.trim();
-  const filtered = q ? names.filter((n) => n.includes(q)) : names;
+  const results = useMemo(() => {
+    if (!q) return [];
+    return [...actorMap.keys()].filter((n) => n.includes(q)).sort((a, b) => a.localeCompare(b, 'ko'));
+  }, [actorMap, q]);
 
-  // ── 배우 상세 ──
+  // ── 배우 상세: 극 이름 + 날짜만, 클릭 시 스레드로 ──
   if (selected) {
-    const list = actorMap.get(selected) ?? [];
+    const list = (actorMap.get(selected) ?? []).slice().sort((a, b) => b.performance_date.localeCompare(a.performance_date));
     return (
       <div className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 h-14 flex items-center gap-2">
@@ -81,15 +75,22 @@ export default function ActorsPage() {
           <span className="ml-auto text-zinc-400 dark:text-zinc-600 text-sm shrink-0">{list.length}편</span>
         </header>
         <main className="flex-1">
-          {list.map((post) => (
-            <PostCard key={post.id} post={post} isOwner={isOwner} onDelete={fetchPosts} />
+          {list.map((p) => (
+            <Link
+              key={p.id}
+              href={`/post/${p.id}`}
+              className="flex items-center justify-between gap-3 px-4 py-3.5 border-b border-zinc-200/60 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition"
+            >
+              <span className="text-zinc-900 dark:text-white font-medium truncate">{p.title}</span>
+              <span className="text-zinc-400 dark:text-zinc-500 text-[13px] shrink-0">{formatDate(p.performance_date)}</span>
+            </Link>
           ))}
         </main>
       </div>
     );
   }
 
-  // ── 배우 목록 ──
+  // ── 검색 ──
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 h-14 flex items-center gap-2">
@@ -101,7 +102,7 @@ export default function ActorsPage() {
             <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
           </svg>
         </button>
-        <h1 className="text-zinc-900 dark:text-white font-bold text-[17px]">배우</h1>
+        <h1 className="text-zinc-900 dark:text-white font-bold text-[17px]">배우 검색</h1>
       </header>
 
       <div className="px-4 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60">
@@ -119,40 +120,28 @@ export default function ActorsPage() {
       </div>
 
       <main className="flex-1">
-        {loading && (
-          <div className="flex flex-col">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="px-4 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 animate-pulse">
-                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/3" />
-              </div>
-            ))}
-          </div>
-        )}
+        {loading && <p className="text-zinc-400 dark:text-zinc-600 text-sm text-center py-16">불러오는 중…</p>}
 
-        {!loading && names.length === 0 && (
+        {!loading && !q && (
           <div className="flex flex-col items-center justify-center py-28 gap-3">
-            <div className="text-5xl">🎭</div>
-            <p className="text-zinc-600 dark:text-zinc-400 font-semibold">아직 기록된 배우가 없어요</p>
-            <p className="text-zinc-400 dark:text-zinc-600 text-sm">기록에 배우를 추가하면 여기 모입니다</p>
+            <svg className="w-12 h-12 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <p className="text-zinc-400 dark:text-zinc-600 text-sm">배우 이름을 검색하세요</p>
           </div>
         )}
 
-        {!loading && names.length > 0 && filtered.length === 0 && (
+        {!loading && q && results.length === 0 && (
           <p className="text-zinc-400 dark:text-zinc-600 text-sm text-center py-16">"{q}" 검색 결과가 없어요</p>
         )}
 
-        {!loading && filtered.map((name) => (
+        {!loading && results.map((name) => (
           <button
             key={name}
             onClick={() => setSelected(name)}
             className="w-full flex items-center justify-between gap-3 px-4 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition text-left"
           >
-            <span className="flex items-center gap-3 min-w-0">
-              <span className="w-9 h-9 rounded-full bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 flex items-center justify-center text-sm font-bold shrink-0">
-                {name[0]}
-              </span>
-              <span className="text-zinc-900 dark:text-white font-medium truncate">{name}</span>
-            </span>
+            <span className="text-zinc-900 dark:text-white font-medium truncate">{name}</span>
             <span className="text-zinc-400 dark:text-zinc-600 text-sm shrink-0">{actorMap.get(name)!.length}편</span>
           </button>
         ))}

@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useRef } from 'react';
 
 // 배우 이름을 칩으로 입력 (Enter/쉼표로 추가, 백스페이스로 마지막 삭제). 생성·수정 공용
+// 비제어(uncontrolled) 입력: React가 조합 중 value를 다시 세팅하지 않아 한글 IME가 영문으로 리셋되지 않음
 export default function ActorInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const [text, setText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function add(raw: string) {
     const names = raw.split(',').map((s) => s.trim()).filter(Boolean);
@@ -11,7 +12,7 @@ export default function ActorInput({ value, onChange }: { value: string[]; onCha
     const merged = [...value];
     for (const n of names) if (!merged.includes(n) && merged.length < 20) merged.push(n);
     onChange(merged);
-    setText('');
+    if (inputRef.current) inputRef.current.value = '';
   }
 
   return (
@@ -31,15 +32,15 @@ export default function ActorInput({ value, onChange }: { value: string[]; onCha
       ))}
       <input
         key="actor-text-input"
+        ref={inputRef}
         lang="ko"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.nativeEvent.isComposing) return; // 한글 조합 중이면 IME에 맡김 (Enter 가로채면 영어로 리셋됨)
-          if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(text); }
-          else if (e.key === 'Backspace' && !text && value.length) onChange(value.slice(0, -1));
+          if (e.nativeEvent.isComposing) return; // 한글 조합 중이면 IME에 맡김
+          const cur = inputRef.current?.value ?? '';
+          if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(cur); }
+          else if (e.key === 'Backspace' && !cur && value.length) onChange(value.slice(0, -1));
         }}
-        onBlur={() => add(text)}
+        onBlur={() => add(inputRef.current?.value ?? '')}
         placeholder={value.length ? '' : '배우 이름 입력 후 Enter'}
         className="flex-1 min-w-[120px] bg-transparent outline-none text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 px-2 py-1 text-sm"
       />

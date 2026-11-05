@@ -2,7 +2,6 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import ActorInput from '@/components/ActorInput';
-import ScanCastButton from '@/components/ScanCastButton';
 import { priceLooksWrong } from '@/lib/postFields';
 
 interface Props {
@@ -203,10 +202,6 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
             <div>
               <label className="text-zinc-500 dark:text-zinc-400 text-xs font-medium block mb-1.5 uppercase tracking-wide">출연 배우</label>
               <ActorInput value={actors} onChange={setActors} />
-              <ScanCastButton
-                imageUrl={imageUrl || null}
-                onExtracted={(names) => setActors((prev) => [...new Set([...prev, ...names])].slice(0, 20))}
-              />
             </div>
           </form>
         </div>

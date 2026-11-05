@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import ActorInput from '@/components/ActorInput';
-import ScanCastButton from '@/components/ScanCastButton';
 import { priceLooksWrong } from '@/lib/postFields';
 
 export interface EditableFields {
@@ -142,10 +141,6 @@ export default function EditPostModal({
               </div>
             )}
             <ActorInput value={actors} onChange={setActors} />
-            <ScanCastButton
-              imageUrl={post.casting_board}
-              onExtracted={(names) => setActors((prev) => [...new Set([...prev, ...names])].slice(0, 20))}
-            />
           </div>
         </div>
       </div>

@@ -23,7 +23,6 @@ function Step1({ userName }: { userName?: string | null }) {
         {[
           { emoji: '📅', text: '관람한 모든 날의 기록' },
           { emoji: '📝', text: '생생한 스레드 후기' },
-          { emoji: '❤️', text: '좋아요로 공감 표현' },
         ].map(({ emoji, text }) => (
           <div key={text} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 rounded-2xl px-4 py-3">
             <span className="text-xl shrink-0">{emoji}</span>
@@ -99,35 +98,7 @@ function Step2() {
   );
 }
 
-function Step3() {
-  return (
-    <div className="flex flex-col items-center text-center gap-5 py-4">
-      <div className="text-7xl">❤️</div>
-      <div>
-        <p className="text-zinc-400 dark:text-zinc-500 text-sm mb-1">공감이 됐다면</p>
-        <h2 className="text-zinc-900 dark:text-white font-bold text-xl">좋아요를 눌러보세요</h2>
-      </div>
-      <div className="w-full flex flex-col gap-2.5 mt-1">
-        <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 rounded-2xl px-4 py-3">
-          <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
-          </div>
-          <span className="text-zinc-700 dark:text-zinc-300 text-[15px] font-medium text-left">각 게시물 하단의 하트를 탭하세요</span>
-        </div>
-        <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 rounded-2xl px-4 py-3">
-          <div className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 text-base">
-            G
-          </div>
-          <span className="text-zinc-700 dark:text-zinc-300 text-[15px] font-medium text-left">구글 계정으로 로그인하면 저장돼요</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const STEPS = [Step1, Step2, Step3];
+const STEPS = [Step1, Step2];
 
 export default function Tutorial({ userName, userEmail, onDone }: Props) {
   const [step, setStep] = useState(0);

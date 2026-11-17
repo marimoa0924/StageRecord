@@ -18,12 +18,17 @@ function formatDate(iso: string) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// 스레드 → 뒤로가기 시 검색어·선택한 배우를 유지 (새로고침하면 초기화)
+let cachedActors: { query: string; selected: string | null } = { query: '', selected: null };
+
 export default function ActorsPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
+  const [query, setQuery] = useState(cachedActors.query);
+  const [selected, setSelected] = useState<string | null>(cachedActors.selected);
+
+  useEffect(() => { cachedActors = { query, selected }; }, [query, selected]);
 
   const fetchPosts = useCallback(async () => {
     try {

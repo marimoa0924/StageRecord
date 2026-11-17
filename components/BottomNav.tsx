@@ -18,11 +18,28 @@ export default function BottomNav({ onNewPost }: Props) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
-    function onOpen() { setKeyboardOpen(true); }
-    function onClose() { setKeyboardOpen(false); }
+    let open = false;
+    let timer: ReturnType<typeof setTimeout>;
+    function onOpen() { open = true; clearTimeout(timer); setKeyboardOpen(true); }
+    function onClose() {
+      if (!open) return;
+      open = false;
+      clearTimeout(timer);
+      // iOS 26 Safari: 키보드를 닫아도 visualViewport.offsetTop이 0으로 안 돌아와 fixed 하단바가
+      // 화면 중간에 뜨는 버그 → 키보드가 다 내려간 뒤 레이아웃을 강제 재계산하고 나서 다시 표시
+      timer = setTimeout(() => {
+        const y = window.scrollY;
+        document.body.style.display = 'none';
+        void document.body.offsetHeight;
+        document.body.style.display = '';
+        window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
+        setKeyboardOpen(false);
+      }, 350);
+    }
     window.addEventListener('compose-keyboard-open', onOpen);
     window.addEventListener('compose-keyboard-close', onClose);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('compose-keyboard-open', onOpen);
       window.removeEventListener('compose-keyboard-close', onClose);
     };

@@ -20,13 +20,18 @@ function showName(title: string) {
     .trim() || title;
 }
 
+// 스레드 → 뒤로가기 시 보던 달·선택한 날을 유지하기 위한 세션 캐시 (새로고침하면 이번 달)
+let cachedView: { year: number; month: number; selected: string | null } | null = null;
+
 export default function CalendarGrid() {
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
+  const [year, setYear] = useState(cachedView?.year ?? today.getFullYear());
+  const [month, setMonth] = useState(cachedView?.month ?? today.getMonth() + 1);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(cachedView?.selected ?? null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { cachedView = { year, month, selected: selectedDate }; }, [year, month, selectedDate]);
 
   useEffect(() => {
     setLoading(true);
